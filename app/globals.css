@@ -1,0 +1,267 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-geist-mono);
+  --font-heading: var(--font-sans);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --color-amber: var(--amber);
+  --color-amber-foreground: var(--amber-foreground);
+  --color-cyan: var(--cyan);
+  --color-cyan-foreground: var(--cyan-foreground);
+  --color-midnight: var(--midnight);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+}
+
+/*
+  Vibe Corner is a single dark "magical" theme by design, not a light/dark
+  toggle — deep violet + midnight blue base, amber glow + cyan accents. The
+  admin dashboard reuses the same tokens but favors flatter surfaces
+  (see .admin-surface below) instead of glass/aurora treatments.
+*/
+:root {
+  --background: oklch(0.16 0.035 290);
+  --foreground: oklch(0.96 0.01 290);
+  --card: oklch(0.21 0.045 288);
+  --card-foreground: oklch(0.96 0.01 290);
+  --popover: oklch(0.19 0.045 288);
+  --popover-foreground: oklch(0.96 0.01 290);
+  --primary: oklch(0.6 0.21 293);
+  --primary-foreground: oklch(0.98 0.01 290);
+  --secondary: oklch(0.3 0.06 288);
+  --secondary-foreground: oklch(0.96 0.01 290);
+  --muted: oklch(0.27 0.04 288);
+  --muted-foreground: oklch(0.72 0.03 288);
+  --accent: oklch(0.78 0.15 70);
+  --accent-foreground: oklch(0.18 0.04 288);
+  --destructive: oklch(0.65 0.23 25);
+  --border: oklch(1 0 0 / 12%);
+  --input: oklch(1 0 0 / 14%);
+  --ring: oklch(0.62 0.19 292 / 0.6);
+  --chart-1: oklch(0.6 0.21 293);
+  --chart-2: oklch(0.78 0.12 200);
+  --chart-3: oklch(0.78 0.15 70);
+  --chart-4: oklch(0.68 0.17 320);
+  --chart-5: oklch(0.72 0.03 288);
+  --radius: 1rem;
+  --sidebar: oklch(0.14 0.035 290);
+  --sidebar-foreground: oklch(0.96 0.01 290);
+  --sidebar-primary: oklch(0.6 0.21 293);
+  --sidebar-primary-foreground: oklch(0.98 0.01 290);
+  --sidebar-accent: oklch(0.27 0.04 288);
+  --sidebar-accent-foreground: oklch(0.96 0.01 290);
+  --sidebar-border: oklch(1 0 0 / 10%);
+  --sidebar-ring: oklch(0.62 0.19 292 / 0.6);
+
+  /* Vibe Corner brand accents, beyond the shadcn token set */
+  --amber: oklch(0.78 0.15 70);
+  --amber-foreground: oklch(0.18 0.04 60);
+  --cyan: oklch(0.78 0.12 200);
+  --cyan-foreground: oklch(0.16 0.03 200);
+  --midnight: oklch(0.12 0.03 270);
+}
+
+.dark {
+  --background: oklch(0.16 0.035 290);
+  --foreground: oklch(0.96 0.01 290);
+  --card: oklch(0.21 0.045 288);
+  --card-foreground: oklch(0.96 0.01 290);
+  --popover: oklch(0.19 0.045 288);
+  --popover-foreground: oklch(0.96 0.01 290);
+  --primary: oklch(0.6 0.21 293);
+  --primary-foreground: oklch(0.98 0.01 290);
+  --secondary: oklch(0.3 0.06 288);
+  --secondary-foreground: oklch(0.96 0.01 290);
+  --muted: oklch(0.27 0.04 288);
+  --muted-foreground: oklch(0.72 0.03 288);
+  --accent: oklch(0.78 0.15 70);
+  --accent-foreground: oklch(0.18 0.04 288);
+  --destructive: oklch(0.65 0.23 25);
+  --border: oklch(1 0 0 / 12%);
+  --input: oklch(1 0 0 / 14%);
+  --ring: oklch(0.62 0.19 292 / 0.6);
+  --chart-1: oklch(0.6 0.21 293);
+  --chart-2: oklch(0.78 0.12 200);
+  --chart-3: oklch(0.78 0.15 70);
+  --chart-4: oklch(0.68 0.17 320);
+  --chart-5: oklch(0.72 0.03 288);
+  --sidebar: oklch(0.14 0.035 290);
+  --sidebar-foreground: oklch(0.96 0.01 290);
+  --sidebar-primary: oklch(0.6 0.21 293);
+  --sidebar-primary-foreground: oklch(0.98 0.01 290);
+  --sidebar-accent: oklch(0.27 0.04 288);
+  --sidebar-accent-foreground: oklch(0.96 0.01 290);
+  --sidebar-border: oklch(1 0 0 / 10%);
+  --sidebar-ring: oklch(0.62 0.19 292 / 0.6);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  html {
+    @apply font-sans;
+  }
+}
+
+@layer utilities {
+  /* Frosted glass surface used across TV + participant UI */
+  .glass-card {
+    @apply rounded-2xl border border-white/10 bg-white/5 shadow-[0_8px_32px_rgba(0,0,0,0.35)] backdrop-blur-xl;
+  }
+
+  /* Flatter, denser surface for the admin dashboard */
+  .admin-surface {
+    @apply rounded-xl border border-white/8 bg-card;
+  }
+
+  .text-gradient-vibe {
+    @apply bg-gradient-to-r from-[oklch(0.72_0.19_293)] via-[oklch(0.78_0.15_70)] to-[oklch(0.78_0.12_200)] bg-clip-text text-transparent;
+  }
+
+  .glow-primary {
+    box-shadow:
+      0 0 24px 4px oklch(0.6 0.21 293 / 0.45),
+      0 0 60px 12px oklch(0.6 0.21 293 / 0.2);
+  }
+
+  .glow-amber {
+    box-shadow:
+      0 0 24px 4px oklch(0.78 0.15 70 / 0.5),
+      0 0 60px 14px oklch(0.78 0.15 70 / 0.25);
+  }
+
+  .glow-cyan {
+    box-shadow:
+      0 0 20px 3px oklch(0.78 0.12 200 / 0.45),
+      0 0 48px 10px oklch(0.78 0.12 200 / 0.2);
+  }
+
+  .aurora-bg {
+    position: relative;
+    isolation: isolate;
+    background: var(--background);
+  }
+
+  .aurora-bg::before {
+    content: "";
+    position: absolute;
+    inset: -20%;
+    z-index: -1;
+    background:
+      radial-gradient(
+        40% 35% at 20% 20%,
+        oklch(0.55 0.22 293 / 0.55),
+        transparent 70%
+      ),
+      radial-gradient(
+        35% 40% at 80% 15%,
+        oklch(0.7 0.14 200 / 0.4),
+        transparent 70%
+      ),
+      radial-gradient(
+        45% 45% at 60% 85%,
+        oklch(0.72 0.16 70 / 0.35),
+        transparent 70%
+      );
+    filter: blur(60px);
+    animation: aurora-drift 24s ease-in-out infinite alternate;
+  }
+
+  @keyframes aurora-drift {
+    0% {
+      transform: translate3d(0, 0, 0) scale(1);
+    }
+    50% {
+      transform: translate3d(-2%, 2%, 0) scale(1.08);
+    }
+    100% {
+      transform: translate3d(2%, -2%, 0) scale(1.02);
+    }
+  }
+
+  @keyframes vibi-breathe {
+    0%,
+    100% {
+      transform: scale(1);
+      opacity: 0.9;
+    }
+    50% {
+      transform: scale(1.06);
+      opacity: 1;
+    }
+  }
+
+  .animate-vibi-breathe {
+    animation: vibi-breathe 3.2s ease-in-out infinite;
+  }
+
+  @keyframes title-wiggle {
+    0%,
+    100% {
+      transform: rotate(0deg) scale(1);
+    }
+    25% {
+      transform: rotate(-2deg) scale(1.03);
+    }
+    75% {
+      transform: rotate(2deg) scale(1.03);
+    }
+  }
+
+  .animate-title-wiggle {
+    display: inline-block;
+    animation: title-wiggle 3.5s ease-in-out infinite;
+  }
+
+  /* Subtle graph-paper texture for the marketing landing page */
+  .grid-bg-vibe {
+    background-image:
+      linear-gradient(to right, oklch(0.6 0.21 293 / 0.06) 1px, transparent 1px),
+      linear-gradient(to bottom, oklch(0.6 0.21 293 / 0.06) 1px, transparent 1px);
+    background-size: 40px 40px;
+  }
+}
