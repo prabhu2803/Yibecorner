@@ -3,25 +3,29 @@ import { z } from "zod"
 
 import { createClient } from "@/lib/supabase/server"
 
-// The single endpoint for turning a QR scan into a verified connection.
-// Deliberately a Route Handler (not a Server Action) so the exact same
-// contract can be reused by future NFC hardware — only `method` differs
-// (see design.md "Verified-connection flow"). All authorization is
-// enforced by RLS via the cookie-bound server client, not by this handler.
+// Resolves a scanned QR token (or manual fallback code) to the other
+// participant's public identity — it no longer creates a connection by
+// itself. Phase 2 of the networking rework requires an explicit "Send
+// Connection Request" step (features/connections/actions.ts) after
+// identifying who was scanned, whether that identification came from a QR
+// scan, a manual code, or (in the future) an NFC tap — deliberately kept as
+// a Route Handler rather than a Server Action so the same contract can be
+// reused by that future NFC hardware (see design.md "Verified-connection
+// flow"). All authorization is enforced by RLS via the cookie-bound server
+// client, not by this handler.
 
-const postSchema = z.object({
+const resolveSchema = z.object({
   eventSlug: z.string().min(1),
   scannedToken: z.string().min(1),
-  method: z.enum(["qr", "nfc", "manual"]).default("qr"),
 })
 
 export async function POST(request: Request) {
   const body = await request.json().catch(() => null)
-  const parsed = postSchema.safeParse(body)
+  const parsed = resolveSchema.safeParse(body)
   if (!parsed.success) {
     return NextResponse.json({ error: "Invalid request" }, { status: 400 })
   }
-  const { eventSlug, scannedToken, method } = parsed.data
+  const { eventSlug, scannedToken } = parsed.data
 
   const supabase = await createClient()
   const {
@@ -48,7 +52,7 @@ export async function POST(request: Request) {
   const normalized = scannedToken.trim().toLowerCase()
   const { data: candidates } = await supabase
     .from("event_participants")
-    .select("id, personal_qr_token")
+    .select("id, personal_qr_token, full_name, company, designation, industry")
     .eq("event_id", event.id)
 
   const other = candidates?.find(
@@ -59,58 +63,20 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "That's your own QR code" }, { status: 400 })
   }
 
-  // Mutual-scan shortcut: if the other person already scanned *us* and it's
-  // still pending, this scan is itself the confirmation — no separate tap
-  // needed.
-  const { data: reverse } = await supabase
-    .from("connections")
-    .select("*")
-    .eq("event_id", event.id)
-    .eq("requester_id", other.id)
-    .eq("recipient_id", me.id)
-    .eq("status", "pending")
-    .maybeSingle()
-
-  if (reverse) {
-    const { data: verified, error } = await supabase
-      .from("connections")
-      .update({ status: "verified" })
-      .eq("id", reverse.id)
-      .eq("status", "pending")
-      .select("id, status")
-      .maybeSingle()
-
-    if (error || !verified) {
-      return NextResponse.json({ error: "Could not verify connection" }, { status: 409 })
-    }
-    return NextResponse.json({ connectionId: verified.id, status: verified.status })
-  }
-
-  const { data: connection, error } = await supabase
-    .from("connections")
-    .upsert(
-      {
-        event_id: event.id,
-        requester_id: me.id,
-        recipient_id: other.id,
-        initiated_via: method,
-        scanned_at: new Date().toISOString(),
-      },
-      { onConflict: "event_id,requester_id,recipient_id" }
-    )
-    .select("id, status")
-    .single()
-
-  if (error || !connection) {
-    return NextResponse.json({ error: error?.message ?? "Could not create connection" }, { status: 500 })
-  }
-
-  return NextResponse.json({ connectionId: connection.id, status: connection.status })
+  return NextResponse.json({
+    participant: {
+      id: other.id,
+      fullName: other.full_name,
+      company: other.company,
+      designation: other.designation,
+      industry: other.industry,
+    },
+  })
 }
 
 const patchSchema = z.object({
   connectionId: z.string().uuid(),
-  action: z.enum(["confirm", "reject"]),
+  action: z.enum(["accept", "decline"]),
 })
 
 export async function PATCH(request: Request) {
@@ -127,12 +93,13 @@ export async function PATCH(request: Request) {
   } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: "Not signed in" }, { status: 401 })
 
-  const nextStatus = action === "confirm" ? "verified" : "rejected"
+  const nextStatus = action === "accept" ? "accepted" : "declined"
 
   // RLS (connections_update_recipient_or_admin) already guarantees only the
-  // QR owner (recipient) can reach this row; the WHERE status='pending' AND
-  // expires_at > now() makes a duplicate confirm affect 0 rows instead of
-  // erroring, and column grants mean only `status` can ever change here.
+  // request's recipient can reach this row; the WHERE status='pending' AND
+  // expires_at > now() makes a duplicate accept/decline affect 0 rows
+  // instead of erroring, and column grants mean only `status` can ever
+  // change here.
   const { data: updated, error } = await supabase
     .from("connections")
     .update({ status: nextStatus })
@@ -145,7 +112,7 @@ export async function PATCH(request: Request) {
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   if (!updated) {
     return NextResponse.json(
-      { error: "Already handled or expired — ask them to scan again" },
+      { error: "Already handled or expired" },
       { status: 409 }
     )
   }

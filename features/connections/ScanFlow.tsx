@@ -5,10 +5,18 @@ import { Scanner, type IScannerError, type ScannerErrorKind } from "@yudiel/reac
 import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
 import { AppTopBar } from "@/components/shared/AppTopBar"
 import { MaterialIcon } from "@/features/onboarding/MaterialIcon"
-import { useVibiState } from "@/features/vibi/useVibiState"
+import { sendConnectionRequest } from "@/features/connections/actions"
 
 function extractToken(rawValue: string): string {
   try {
@@ -39,39 +47,73 @@ const CAMERA_ERROR_COPY: Record<ScannerErrorKind, string> = {
   unknown: "Camera unavailable — use the manual code below.",
 }
 
-export function ScanFlow({ eventSlug, initial = "?" }: { eventSlug: string; initial?: string }) {
+interface ResolvedParticipant {
+  id: string
+  fullName: string
+  company: string | null
+  designation: string | null
+  industry: string
+}
+
+export function ScanFlow({
+  eventSlug,
+  eventId,
+  initial = "?",
+}: {
+  eventSlug: string
+  eventId: string
+  initial?: string
+}) {
   const [paused, setPaused] = React.useState(false)
   const [manualCode, setManualCode] = React.useState("")
-  const [submitting, setSubmitting] = React.useState(false)
+  const [resolving, setResolving] = React.useState(false)
   const [cameraError, setCameraError] = React.useState<IScannerError | null>(null)
-  const react = useVibiState((s) => s.react)
+  const [resolvedMethod, setResolvedMethod] = React.useState<"qr" | "manual">("qr")
+  const [resolved, setResolved] = React.useState<ResolvedParticipant | null>(null)
+  const [message, setMessage] = React.useState("")
+  const [sending, setSending] = React.useState(false)
 
-  async function submitToken(scannedToken: string, method: "qr" | "manual") {
-    setSubmitting(true)
+  async function resolveToken(scannedToken: string, method: "qr" | "manual") {
+    setResolving(true)
     setPaused(true)
     try {
       const res = await fetch("/api/connections/verify", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ eventSlug, scannedToken, method }),
+        body: JSON.stringify({ eventSlug, scannedToken }),
       })
       const data = await res.json()
 
       if (!res.ok) {
-        toast.error(data.error ?? "Could not connect")
+        toast.error(data.error ?? "Could not identify that code")
         return
       }
 
-      if (data.status === "verified") {
-        react("heart")
-        toast.success("Connection verified!")
-      } else {
-        toast("Scan sent — waiting for them to confirm", { icon: "⏳" })
-      }
+      setResolvedMethod(method)
+      setResolved(data.participant)
     } finally {
-      setSubmitting(false)
+      setResolving(false)
       setTimeout(() => setPaused(false), 1200)
     }
+  }
+
+  async function handleSend() {
+    if (!resolved) return
+    setSending(true)
+    const result = await sendConnectionRequest(eventSlug, eventId, {
+      recipientParticipantId: resolved.id,
+      message,
+      initiatedVia: resolvedMethod,
+    })
+    setSending(false)
+    if (!result.success) {
+      toast.error(result.error)
+      return
+    }
+    toast.success(`Request sent to ${resolved.fullName} — find them and say hi!`)
+    setResolved(null)
+    setMessage("")
+    setManualCode("")
   }
 
   return (
@@ -98,8 +140,8 @@ export function ScanFlow({ eventSlug, initial = "?" }: { eventSlug: string; init
             <Scanner
               onScan={(codes) => {
                 const rawValue = codes[0]?.rawValue
-                if (rawValue && !submitting) {
-                  void submitToken(extractToken(rawValue), "qr")
+                if (rawValue && !resolving) {
+                  void resolveToken(extractToken(rawValue), "qr")
                 }
               }}
               onError={(error) => {
@@ -127,14 +169,50 @@ export function ScanFlow({ eventSlug, initial = "?" }: { eventSlug: string; init
             />
             <Button
               className="cc-neon-primary rounded-xl bg-gradient-to-r from-[var(--cc-primary-container)] to-[var(--cc-secondary-container)] text-[var(--cc-on-primary)]"
-              disabled={manualCode.length < 4 || submitting}
-              onClick={() => submitToken(manualCode.toLowerCase(), "manual")}
+              disabled={manualCode.length < 4 || resolving}
+              onClick={() => resolveToken(manualCode.toLowerCase(), "manual")}
             >
               Connect
             </Button>
           </div>
         </div>
       </div>
+
+      <Dialog open={!!resolved} onOpenChange={(open) => !open && setResolved(null)}>
+        <DialogContent className="cc-scope rounded-2xl border border-white/10 bg-[var(--cc-surface)] text-[var(--cc-on-surface)]">
+          <DialogHeader>
+            <DialogTitle className="cc-headline text-base font-bold text-[var(--cc-on-surface)]">
+              Connect with {resolved?.fullName}?
+            </DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-[var(--cc-on-surface-variant)]">
+            {resolved?.designation ? `${resolved.designation}` : ""}
+            {resolved?.designation && resolved?.company ? " at " : ""}
+            {resolved?.company ?? ""}
+          </p>
+          <Textarea
+            placeholder="Optional message, e.g. I'd love to discuss AI for manufacturing."
+            rows={3}
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+          />
+          <DialogFooter className="rounded-b-2xl border-t border-white/10 bg-transparent">
+            <Button
+              className="cc-glass-panel rounded-xl text-[var(--cc-on-surface-variant)]"
+              onClick={() => setResolved(null)}
+            >
+              Cancel
+            </Button>
+            <Button
+              disabled={sending}
+              onClick={handleSend}
+              className="cc-neon-primary rounded-xl bg-gradient-to-r from-[var(--cc-primary-container)] to-[var(--cc-secondary-container)] text-[var(--cc-on-primary)]"
+            >
+              {sending ? "Sending..." : "Send Connection Request"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

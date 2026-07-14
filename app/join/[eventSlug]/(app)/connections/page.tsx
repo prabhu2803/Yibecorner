@@ -42,15 +42,43 @@ export default async function ConnectionsPage({
   )
 
   const { data: others } = otherIds.length
-    ? await supabase.from("event_participants").select("id, full_name").in("id", otherIds)
+    ? await supabase
+        .from("event_participants")
+        .select("id, full_name, company, designation, industry")
+        .in("id", otherIds)
     : { data: [] }
 
-  const nameById = new Map((others ?? []).map((o) => [o.id, o.full_name]))
+  const otherById = new Map((others ?? []).map((o) => [o.id, o]))
+
+  // Contact numbers are only fetchable for participants we have an
+  // *accepted* connection with (see 0022_participant_contacts_connected_select.sql)
+  // — scoping the query to just those ids keeps it aligned with what RLS
+  // actually allows, rather than relying on RLS to silently filter rows.
+  const acceptedOtherIds = Array.from(
+    new Set(
+      (connections ?? [])
+        .filter((c) => c.status === "accepted")
+        .map((c) => (c.requester_id === me.id ? c.recipient_id : c.requester_id))
+    )
+  )
+  const { data: contacts } = acceptedOtherIds.length
+    ? await supabase.from("participant_contacts").select("participant_id, whatsapp_number").in("participant_id", acceptedOtherIds)
+    : { data: [] }
+  const whatsappByParticipantId = new Map((contacts ?? []).map((c) => [c.participant_id, c.whatsapp_number]))
 
   const views: ConnectionView[] = (connections ?? []).map((c) => {
     const otherIsRequester = c.requester_id !== me.id
     const otherId = otherIsRequester ? c.requester_id : c.recipient_id
-    return { ...c, otherName: nameById.get(otherId) ?? "Someone", otherIsRequester }
+    const other = otherById.get(otherId)
+    return {
+      ...c,
+      otherName: other?.full_name ?? "Someone",
+      otherIsRequester,
+      otherCompany: other?.company ?? null,
+      otherDesignation: other?.designation ?? null,
+      otherIndustry: other?.industry ?? null,
+      otherWhatsapp: whatsappByParticipantId.get(otherId) ?? null,
+    }
   })
 
   const initial = (me.full_name?.trim()[0] ?? "?").toUpperCase()

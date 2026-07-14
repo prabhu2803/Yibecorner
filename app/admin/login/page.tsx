@@ -22,13 +22,24 @@ export default function AdminLoginPage() {
     e.preventDefault()
     setSubmitting(true)
     const supabase = createClient()
-    const { error } = await supabase.auth.signInWithPassword({ email, password })
-    setSubmitting(false)
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password })
 
     if (error) {
+      setSubmitting(false)
       toast.error(error.message)
       return
     }
+
+    // Correct credentials but not an admin account: proxy.ts would bounce
+    // this straight back to /admin/login with zero explanation, which
+    // just looks broken. Catch it here instead, with a real message.
+    if (data.user?.app_metadata?.role !== "admin") {
+      await supabase.auth.signOut()
+      setSubmitting(false)
+      toast.error("This account doesn't have admin access.")
+      return
+    }
+
     router.replace("/admin")
     router.refresh()
   }

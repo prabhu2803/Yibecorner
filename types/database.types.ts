@@ -15,8 +15,8 @@ export type Json = string | number | boolean | null | { [key: string]: Json | un
 export type BusinessStage = "idea" | "early_stage" | "growth" | "scaling" | "established"
 export type EventStatus = "draft" | "live" | "ended"
 export type MatchStatus = "suggested" | "viewed" | "connect_requested" | "dismissed"
-export type ConnectionStatus = "pending" | "verified" | "rejected" | "expired"
-export type ConnectionMethod = "qr" | "nfc" | "manual"
+export type ConnectionStatus = "pending" | "accepted" | "declined" | "expired"
+export type ConnectionMethod = "qr" | "nfc" | "manual" | "match"
 export type ChallengeStatus = "open" | "solved" | "closed"
 export type DiscussionStatus = "open" | "converted" | "closed"
 export type ScreenCommandType =
@@ -197,6 +197,7 @@ export interface Database {
           recipient_id: string
           status: ConnectionStatus
           initiated_via: ConnectionMethod
+          message: string | null
           scanned_at: string
           verified_at: string | null
           expires_at: string
@@ -336,6 +337,23 @@ export interface Database {
         Update: Partial<Database["public"]["Tables"]["discussion_members"]["Row"]>
         Relationships: []
       }
+      discussion_messages: {
+        Row: {
+          id: string
+          discussion_id: string
+          author_id: string
+          body: string
+          is_flagged: boolean
+          created_at: string
+        }
+        Insert: Partial<Database["public"]["Tables"]["discussion_messages"]["Row"]> & {
+          discussion_id: string
+          author_id: string
+          body: string
+        }
+        Update: Partial<Database["public"]["Tables"]["discussion_messages"]["Row"]>
+        Relationships: []
+      }
       screen_commands: {
         Row: {
           id: string
@@ -394,6 +412,10 @@ export interface Database {
       toggle_upvote: { Args: { p_best_practice_id: string }; Returns: boolean }
       toggle_save: { Args: { p_best_practice_id: string }; Returns: boolean }
       expire_stale_connections: { Args: Record<string, never>; Returns: void }
+      find_or_claim_participant_by_phone: {
+        Args: { p_event_id: string; p_mobile_number: string }
+        Returns: string | null
+      }
     }
     Enums: Record<string, never>
     CompositeTypes: Record<string, never>

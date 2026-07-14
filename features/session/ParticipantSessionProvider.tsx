@@ -70,7 +70,7 @@ export function ParticipantSessionProvider({
     let cancelled = false
     const supabase = createClient()
 
-    async function bootstrap() {
+    async function establishAnonymousSession(): Promise<string | null> {
       const {
         data: { session },
       } = await supabase.auth.getSession()
@@ -81,16 +81,44 @@ export function ParticipantSessionProvider({
         if (error) throw error
         uid = data.user?.id ?? null
       }
+      return uid
+    }
 
+    void (async () => {
+      const uid = await establishAnonymousSession()
       if (cancelled) return
       setUserId(uid)
       if (uid) await fetchParticipant(uid)
       if (!cancelled) setLoading(false)
-    }
+    })()
 
-    void bootstrap()
+    // This provider is mounted once at the (app) layout level and never
+    // remounts on client-side navigation — so signOut() (e.g. the Sign Out
+    // button in ProfileForm) clears the cookie but leaves this component's
+    // in-memory `participant`/`userId` state stale unless we react to the
+    // auth event ourselves. On SIGNED_OUT, clear that state and immediately
+    // re-establish a fresh anonymous identity, mirroring first load.
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event) => {
+      if (event === "SIGNED_OUT") {
+        setParticipant(null)
+        setContacts(null)
+        setUserId(null)
+        setLoading(true)
+        void (async () => {
+          const uid = await establishAnonymousSession()
+          if (cancelled) return
+          setUserId(uid)
+          if (uid) await fetchParticipant(uid)
+          if (!cancelled) setLoading(false)
+        })()
+      }
+    })
+
     return () => {
       cancelled = true
+      subscription.unsubscribe()
     }
   }, [fetchParticipant])
 

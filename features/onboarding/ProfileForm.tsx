@@ -27,6 +27,7 @@ import { VibiMascot } from "@/features/vibi/VibiMascot"
 import { completeOnboarding } from "@/features/onboarding/actions"
 import { onboardingSchema, phoneRegex, type OnboardingInput } from "@/features/onboarding/schema"
 import { useParticipantSession } from "@/features/session/ParticipantSessionProvider"
+import { createClient } from "@/lib/supabase/client"
 import {
   BUSINESS_STAGES,
   CHALLENGE_CATEGORIES,
@@ -137,6 +138,18 @@ export function ProfileForm() {
     }
     await refetchParticipant()
     toast.success("Profile updated")
+  }
+
+  // Anonymous auth means "identity" is this browser session, not a
+  // password-protected account — signing out doesn't let you log back in
+  // as yourself later. It starts a brand-new anonymous session, which
+  // lands back on onboarding; re-entering the same mobile number there
+  // re-links this exact profile (see find_or_claim_participant_by_phone).
+  async function handleSignOut() {
+    const supabase = createClient()
+    await supabase.auth.signOut()
+    router.replace(`/join/${event.slug}`)
+    router.refresh()
   }
 
   if (loading || !participant) {
@@ -404,6 +417,22 @@ export function ProfileForm() {
                 </FormItem>
               )}
             />
+          </Section>
+
+          <Section label="Session">
+            <p className="text-xs text-[var(--cc-on-surface-variant)]">
+              Signing out starts a new session on this device. To resume this exact profile later, enter the same
+              mobile number again during onboarding.
+            </p>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleSignOut}
+              className="cc-glass-panel w-fit gap-1.5 rounded-xl text-[var(--cc-on-surface-variant)]"
+            >
+              <MaterialIcon name="logout" className="text-[16px]" />
+              Sign out
+            </Button>
           </Section>
 
           <div className="sticky bottom-0 z-40 -mx-4 mt-2 border-t border-white/10 bg-[var(--cc-surface)]/85 px-4 py-4 backdrop-blur-xl">

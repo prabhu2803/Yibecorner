@@ -44,6 +44,21 @@ export default async function MatchesPage({
 
   const byId = new Map((matchedParticipants ?? []).map((p) => [p.id, p]))
 
+  // So the Connect button can reflect "Request Sent" / "Connected" instead
+  // of always showing "Connect", even after a page refresh.
+  const { data: existingConnections } = matchedIds.length
+    ? await supabase
+        .from("connections")
+        .select("requester_id, recipient_id, status")
+        .eq("event_id", result.event.id)
+        .or(
+          `and(requester_id.eq.${me.id},recipient_id.in.(${matchedIds.join(",")})),and(recipient_id.eq.${me.id},requester_id.in.(${matchedIds.join(",")}))`
+        )
+    : { data: [] }
+  const connectionStatusByParticipantId = new Map(
+    (existingConnections ?? []).map((c) => [c.requester_id === me.id ? c.recipient_id : c.requester_id, c.status])
+  )
+
   const initial = (me.full_name?.trim()[0] ?? "?").toUpperCase()
 
   return (
@@ -68,9 +83,12 @@ export default async function MatchesPage({
           return (
             <MatchCard
               key={match.id}
+              eventSlug={eventSlug}
+              eventId={result.event.id}
               scanHref={`/join/${eventSlug}/connections/scan`}
               match={{
                 matchId: match.id,
+                participantId: person.id,
                 name: person.full_name,
                 company: person.company,
                 industry: person.industry,
@@ -78,6 +96,7 @@ export default async function MatchesPage({
                 reasons: match.reasons,
                 conversationStarter: match.conversation_starter,
                 status: match.status,
+                connectionStatus: connectionStatusByParticipantId.get(person.id) ?? null,
               }}
             />
           )

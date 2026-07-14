@@ -14,7 +14,7 @@ export function MobileNav({ eventSlug }: { eventSlug: string }) {
     { href: `${base}/home`, label: "Home", icon: "home" },
     { href: `${base}/matches`, label: "Matches", icon: "auto_awesome" },
     { href: `${base}/yibe`, label: "YIBE", icon: "groups" },
-    { href: `${base}/connections`, label: "Connect", icon: "qr_code_2" },
+    { href: `${base}/connections`, label: "Connections", icon: "handshake" },
     { href: `${base}/profile`, label: "Profile", icon: "person" },
   ]
 

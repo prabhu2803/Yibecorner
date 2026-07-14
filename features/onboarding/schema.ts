@@ -26,6 +26,18 @@ const challengeCategoryValues = CHALLENGE_CATEGORIES as unknown as [ChallengeCat
 // why those checks can't just rely on this schema's superRefine mid-wizard.
 export const phoneRegex = /^[+\d][\d\s\-()]{6,}$/
 
+// Strips everything but digits and a leading "+" so "+91 98765-43210" and
+// "+919876543210" compare equal. Used both when writing mobile_number (so
+// stored values are consistent) and when looking up an existing participant
+// by phone in completeOnboarding — comparisons only work if both sides went
+// through the same normalization.
+export function normalizePhone(raw: string): string {
+  const trimmed = raw.trim()
+  const hasPlus = trimmed.startsWith("+")
+  const digits = trimmed.replace(/\D/g, "")
+  return hasPlus ? `+${digits}` : digits
+}
+
 export const onboardingSchema = z
   .object({
     fullName: z.string().trim().min(2, "Enter your full name").max(100),

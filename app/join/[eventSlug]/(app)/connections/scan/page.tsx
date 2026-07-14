@@ -7,7 +7,7 @@ import { useParticipantSession } from "@/features/session/ParticipantSessionProv
 
 export default function ScanPage() {
   const { eventSlug } = useParams<{ eventSlug: string }>()
-  const { participant } = useParticipantSession()
+  const { event, participant } = useParticipantSession()
   const initial = (participant?.full_name?.trim()[0] ?? "?").toUpperCase()
-  return <ScanFlow eventSlug={eventSlug} initial={initial} />
+  return <ScanFlow eventSlug={eventSlug} eventId={event.id} initial={initial} />
 }

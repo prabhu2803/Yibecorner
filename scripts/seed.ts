@@ -438,7 +438,7 @@ async function main() {
   }
   console.log(`Created ${discussionSpecs.length} discussions.`)
 
-  // Connections: mostly verified, a few left pending.
+  // Connections: mostly accepted, a few left pending.
   const connectionPairs = pickMany(
     participants.flatMap((a, i) =>
       participants.slice(i + 1).map((b) => [a, b] as const)
@@ -461,10 +461,10 @@ async function main() {
     if (!connection) continue
 
     if (i < connectionPairs.length - 3) {
-      await supabase.from("connections").update({ status: "verified" }).eq("id", connection.id)
+      await supabase.from("connections").update({ status: "accepted" }).eq("id", connection.id)
     }
   }
-  console.log(`Created ${connectionPairs.length} connections (${connectionPairs.length - 3} verified).`)
+  console.log(`Created ${connectionPairs.length} connections (${connectionPairs.length - 3} accepted).`)
 
   console.log("\nSeed complete.")
   console.log(`Event: /screen/${EVENT_SLUG} and /join/${EVENT_SLUG}`)
