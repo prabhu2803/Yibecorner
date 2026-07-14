@@ -20,7 +20,8 @@ export function QrFrame({
     <div className={cn("relative inline-flex items-center justify-center p-6", className)}>
       <motion.div
         aria-hidden
-        className="glow-cyan absolute inset-0 rounded-3xl border-2 border-cyan/40"
+        className="absolute inset-0 rounded-3xl border-2 border-[var(--cc-secondary)]/40"
+        style={{ boxShadow: "0 0 20px rgba(93, 230, 255, 0.35)" }}
         animate={{ opacity: [0.5, 1, 0.5] }}
         transition={{ duration: 2.4, repeat: Infinity, ease: "easeInOut" }}
       />
@@ -33,10 +34,10 @@ export function QrFrame({
         <span
           key={corner}
           aria-hidden
-          className={cn("absolute h-6 w-6 border-accent", corner)}
+          className={cn("absolute h-6 w-6 border-[var(--cc-primary)]", corner)}
         />
       ))}
-      <div className="glass-card relative z-10 rounded-2xl bg-white p-4">{children}</div>
+      <div className="cc-glass-panel relative z-10 rounded-2xl bg-white p-4">{children}</div>
     </div>
   )
 }

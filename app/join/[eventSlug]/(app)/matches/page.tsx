@@ -1,5 +1,6 @@
 import { notFound, redirect } from "next/navigation"
 
+import { AppTopBar } from "@/components/shared/AppTopBar"
 import { MatchCard } from "@/features/matchmaking/MatchCard"
 import { getEventBySlug } from "@/lib/queries/events"
 import { createClient } from "@/lib/supabase/server"
@@ -21,7 +22,7 @@ export default async function MatchesPage({
 
   const { data: me } = await supabase
     .from("event_participants")
-    .select("id")
+    .select("id, full_name")
     .eq("event_id", result.event.id)
     .eq("user_id", user.id)
     .maybeSingle()
@@ -43,39 +44,45 @@ export default async function MatchesPage({
 
   const byId = new Map((matchedParticipants ?? []).map((p) => [p.id, p]))
 
+  const initial = (me.full_name?.trim()[0] ?? "?").toUpperCase()
+
   return (
-    <div className="flex flex-col gap-4 py-6">
-      <div>
-        <h1 className="text-xl font-bold">AI Matchmaking</h1>
-        <p className="text-sm text-muted-foreground">Your best matches at {result.event.name}</p>
+    <div className="-mx-4 flex flex-1 flex-col bg-[var(--cc-surface)]">
+      <AppTopBar homeHref={`/join/${eventSlug}/home`} profileHref={`/join/${eventSlug}/profile`} initial={initial} />
+
+      <div className="flex flex-col gap-4 px-4 py-6">
+        <div>
+          <h1 className="cc-headline text-xl font-bold text-[var(--cc-on-surface)]">AI Matchmaking</h1>
+          <p className="text-sm text-[var(--cc-on-surface-variant)]">Your best matches at {result.event.name}</p>
+        </div>
+
+        {!matches?.length && (
+          <p className="text-sm text-[var(--cc-on-surface-variant)]">
+            No matches yet — check back after more participants join.
+          </p>
+        )}
+
+        {matches?.map((match) => {
+          const person = byId.get(match.matched_participant_id)
+          if (!person) return null
+          return (
+            <MatchCard
+              key={match.id}
+              scanHref={`/join/${eventSlug}/connections/scan`}
+              match={{
+                matchId: match.id,
+                name: person.full_name,
+                company: person.company,
+                industry: person.industry,
+                score: Number(match.score),
+                reasons: match.reasons,
+                conversationStarter: match.conversation_starter,
+                status: match.status,
+              }}
+            />
+          )
+        })}
       </div>
-
-      {!matches?.length && (
-        <p className="text-sm text-muted-foreground">
-          No matches yet — check back after more participants join.
-        </p>
-      )}
-
-      {matches?.map((match) => {
-        const person = byId.get(match.matched_participant_id)
-        if (!person) return null
-        return (
-          <MatchCard
-            key={match.id}
-            scanHref={`/join/${eventSlug}/connections/scan`}
-            match={{
-              matchId: match.id,
-              name: person.full_name,
-              company: person.company,
-              industry: person.industry,
-              score: Number(match.score),
-              reasons: match.reasons,
-              conversationStarter: match.conversation_starter,
-              status: match.status,
-            }}
-          />
-        )
-      })}
     </div>
   )
 }

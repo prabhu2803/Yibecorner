@@ -2,12 +2,10 @@
 
 import * as React from "react"
 import Link from "next/link"
-import { Sparkles } from "lucide-react"
 import { toast } from "sonner"
 
-import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { GlassCard } from "@/components/shared/GlassCard"
+import { MaterialIcon } from "@/features/onboarding/MaterialIcon"
 import { markMatchConnectRequested } from "@/features/matchmaking/mutations"
 
 export interface MatchCardData {
@@ -38,45 +36,45 @@ export function MatchCard({ match, scanHref }: { match: MatchCardData; scanHref:
   }
 
   return (
-    <GlassCard className="flex flex-col gap-3">
-      <div className="flex items-start justify-between">
+    <div className="cc-glass-panel flex flex-col gap-3 rounded-2xl p-5">
+      <div className="flex items-start justify-between gap-3">
         <div>
-          <p className="font-semibold">{match.name}</p>
-          <p className="text-xs text-muted-foreground">
+          <p className="cc-headline font-semibold text-[var(--cc-on-surface)]">{match.name}</p>
+          <p className="text-xs text-[var(--cc-on-surface-variant)]">
             {match.company ? `${match.company} · ` : ""}
             {match.industry.replace(/_/g, " ")}
           </p>
         </div>
-        <Badge className="glow-amber gap-1 bg-accent text-accent-foreground">
-          <Sparkles className="size-3" />
-          {Math.round(match.score)}% match
-        </Badge>
+        <div className="cc-neon-primary flex shrink-0 items-center gap-1 rounded-full bg-gradient-to-r from-[var(--cc-primary-container)] to-[var(--cc-secondary-container)] px-3 py-1 text-[var(--cc-on-primary)]">
+          <MaterialIcon name="auto_awesome" className="text-[14px]" />
+          <span className="cc-label-tech text-[11px] font-bold">{Math.round(match.score)}%</span>
+        </div>
       </div>
 
-      <ul className="flex flex-col gap-1 text-sm text-muted-foreground">
+      <ul className="flex flex-col gap-1 text-sm text-[var(--cc-on-surface-variant)]">
         {match.reasons.map((reason, i) => (
           <li key={i}>• {reason}</li>
         ))}
       </ul>
 
       {match.conversationStarter && (
-        <p className="rounded-lg bg-white/5 p-3 text-sm italic">
+        <p className="rounded-lg bg-[rgba(93,230,255,0.06)] p-3 text-sm text-[var(--cc-on-surface)] italic">
           &ldquo;{match.conversationStarter}&rdquo;
         </p>
       )}
 
       <div className="flex gap-2">
         <Button
-          className="flex-1"
+          className="cc-neon-primary flex-1 rounded-xl bg-gradient-to-r from-[var(--cc-primary-container)] to-[var(--cc-secondary-container)] text-[var(--cc-on-primary)]"
           disabled={status === "connect_requested" || pending}
           onClick={handleConnect}
         >
           {status === "connect_requested" ? "Marked as priority" : "Connect"}
         </Button>
         <Link href={scanHref}>
-          <Button variant="outline">Scan QR</Button>
+          <Button className="cc-glass-panel rounded-xl text-[var(--cc-on-surface)]">Scan QR</Button>
         </Link>
       </div>
-    </GlassCard>
+    </div>
   )
 }

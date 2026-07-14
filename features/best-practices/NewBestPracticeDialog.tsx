@@ -1,7 +1,6 @@
 "use client"
 
 import * as React from "react"
-import { PlusCircle } from "lucide-react"
 import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
@@ -15,6 +14,7 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
+import { MaterialIcon } from "@/features/onboarding/MaterialIcon"
 import { createBestPractice } from "@/features/best-practices/actions"
 
 export function NewBestPracticeDialog({ eventSlug, eventId }: { eventSlug: string; eventId: string }) {
@@ -40,14 +40,16 @@ export function NewBestPracticeDialog({ eventSlug, eventId }: { eventSlug: strin
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button className="glow-primary gap-2">
-          <PlusCircle className="size-4" />
+        <Button className="cc-neon-primary gap-2 rounded-xl bg-gradient-to-r from-[var(--cc-primary-container)] to-[var(--cc-secondary-container)] text-[var(--cc-on-primary)]">
+          <MaterialIcon name="add_circle" className="text-[18px]" />
           Share a Best Practice
         </Button>
       </DialogTrigger>
-      <DialogContent>
+      <DialogContent className="cc-scope rounded-2xl border border-white/10 bg-[var(--cc-surface)] text-[var(--cc-on-surface)]">
         <DialogHeader>
-          <DialogTitle>Share an actionable lesson</DialogTitle>
+          <DialogTitle className="cc-headline text-base font-bold text-[var(--cc-on-surface)]">
+            Share an actionable lesson
+          </DialogTitle>
         </DialogHeader>
         <div className="flex flex-col gap-3">
           <Input
@@ -62,8 +64,12 @@ export function NewBestPracticeDialog({ eventSlug, eventId }: { eventSlug: strin
             onChange={(e) => setBody(e.target.value)}
           />
         </div>
-        <DialogFooter>
-          <Button disabled={title.length < 4 || body.length < 10 || submitting} onClick={submit}>
+        <DialogFooter className="rounded-b-2xl border-t border-white/10 bg-transparent">
+          <Button
+            className="cc-neon-primary rounded-xl bg-gradient-to-r from-[var(--cc-primary-container)] to-[var(--cc-secondary-container)] text-[var(--cc-on-primary)]"
+            disabled={title.length < 4 || body.length < 10 || submitting}
+            onClick={submit}
+          >
             {submitting ? "Sharing..." : "Share"}
           </Button>
         </DialogFooter>

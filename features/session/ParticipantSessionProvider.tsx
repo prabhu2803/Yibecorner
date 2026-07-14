@@ -8,11 +8,16 @@ import type { Database } from "@/types/database.types"
 
 type EventRow = Database["public"]["Tables"]["events"]["Row"]
 type ParticipantRow = Database["public"]["Tables"]["event_participants"]["Row"]
+type ContactsRow = Database["public"]["Tables"]["participant_contacts"]["Row"]
 
 interface ParticipantSessionValue {
   event: EventRow
   userId: string | null
   participant: ParticipantRow | null
+  /** Mobile/WhatsApp numbers — null until the participant has saved them.
+   *  Lives in its own table (see 0016_add_participant_contacts.sql) since
+   *  event_participants has a public select policy and these must not. */
+  contacts: ContactsRow | null
   loading: boolean
   refetchParticipant: () => Promise<void>
 }
@@ -33,6 +38,7 @@ export function ParticipantSessionProvider({
 }) {
   const [userId, setUserId] = React.useState<string | null>(null)
   const [participant, setParticipant] = React.useState<ParticipantRow | null>(null)
+  const [contacts, setContacts] = React.useState<ContactsRow | null>(null)
   const [loading, setLoading] = React.useState(true)
 
   const fetchParticipant = React.useCallback(
@@ -45,6 +51,17 @@ export function ParticipantSessionProvider({
         .eq("user_id", uid)
         .maybeSingle()
       setParticipant(data)
+
+      if (data) {
+        const { data: contactsData } = await supabase
+          .from("participant_contacts")
+          .select("*")
+          .eq("participant_id", data.id)
+          .maybeSingle()
+        setContacts(contactsData)
+      } else {
+        setContacts(null)
+      }
     },
     [event.id]
   )
@@ -91,7 +108,7 @@ export function ParticipantSessionProvider({
 
   return (
     <ParticipantSessionContext.Provider
-      value={{ event, userId, participant, loading, refetchParticipant }}
+      value={{ event, userId, participant, contacts, loading, refetchParticipant }}
     >
       {children}
     </ParticipantSessionContext.Provider>

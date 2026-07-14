@@ -1,9 +1,8 @@
 import Link from "next/link"
-import { notFound } from "next/navigation"
-import { MapPin, Users } from "lucide-react"
+import { notFound, redirect } from "next/navigation"
 
-import { Badge } from "@/components/ui/badge"
-import { GlassCard } from "@/components/shared/GlassCard"
+import { AppTopBar } from "@/components/shared/AppTopBar"
+import { MaterialIcon } from "@/features/onboarding/MaterialIcon"
 import { NewDiscussionDialog } from "@/features/discussions/NewDiscussionDialog"
 import { getEventBySlug } from "@/lib/queries/events"
 import { createClient } from "@/lib/supabase/server"
@@ -18,6 +17,19 @@ export default async function DiscussionsPage({
   if (!result) notFound()
 
   const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) redirect(`/join/${eventSlug}`)
+
+  const { data: me } = await supabase
+    .from("event_participants")
+    .select("full_name")
+    .eq("event_id", result.event.id)
+    .eq("user_id", user.id)
+    .maybeSingle()
+  const initial = (me?.full_name?.trim()[0] ?? "?").toUpperCase()
+
   const { data: discussions } = await supabase
     .from("discussions")
     .select("*")
@@ -25,40 +37,45 @@ export default async function DiscussionsPage({
     .order("participant_count", { ascending: false })
 
   return (
-    <div className="flex flex-col gap-4 py-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-xl font-bold">Industry Discussions</h1>
-          <p className="text-sm text-muted-foreground">Browse and join a conversation.</p>
+    <div className="-mx-4 flex flex-1 flex-col bg-[var(--cc-surface)]">
+      <AppTopBar homeHref={`/join/${eventSlug}/home`} profileHref={`/join/${eventSlug}/profile`} initial={initial} />
+
+      <div className="flex flex-col gap-4 px-4 py-6">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <h1 className="cc-headline text-xl font-bold text-[var(--cc-on-surface)]">Industry Discussions</h1>
+            <p className="text-sm text-[var(--cc-on-surface-variant)]">Browse and join a conversation.</p>
+          </div>
+          <NewDiscussionDialog eventSlug={eventSlug} eventId={result.event.id} />
         </div>
-        <NewDiscussionDialog eventSlug={eventSlug} eventId={result.event.id} />
-      </div>
 
-      {discussions?.map((d) => (
-        <Link key={d.id} href={`/join/${eventSlug}/yibe/discussions/${d.id}`}>
-          <GlassCard className="flex flex-col gap-2 transition hover:bg-white/10">
-            <div className="flex items-start justify-between gap-2">
-              <p className="font-semibold">{d.topic}</p>
-              {d.status === "converted" && (
-                <Badge className="gap-1 bg-accent/20 text-accent">
-                  <MapPin className="size-3" /> Circle
-                </Badge>
+        {discussions?.map((d) => (
+          <Link key={d.id} href={`/join/${eventSlug}/yibe/discussions/${d.id}`}>
+            <div className="cc-glass-panel flex flex-col gap-2 rounded-2xl p-4 transition hover:border-[var(--cc-primary)]/40">
+              <div className="flex items-start justify-between gap-2">
+                <p className="font-semibold text-[var(--cc-on-surface)]">{d.topic}</p>
+                {d.status === "converted" && (
+                  <span className="cc-neon-secondary flex shrink-0 items-center gap-1 rounded-full bg-[rgba(0,203,230,0.12)] px-2 py-0.5">
+                    <MaterialIcon name="location_on" className="text-[12px] text-[var(--cc-secondary)]" />
+                    <span className="cc-label-tech text-[10px] text-[var(--cc-secondary)] uppercase">Circle</span>
+                  </span>
+                )}
+              </div>
+              {d.description && (
+                <p className="line-clamp-2 text-sm text-[var(--cc-on-surface-variant)]">{d.description}</p>
               )}
+              <div className="flex items-center gap-1 text-xs text-[var(--cc-on-surface-variant)]">
+                <MaterialIcon name="groups" className="text-[14px]" /> {d.participant_count} joined
+                {d.circle_location && <span> · Meet at {d.circle_location}</span>}
+              </div>
             </div>
-            {d.description && (
-              <p className="line-clamp-2 text-sm text-muted-foreground">{d.description}</p>
-            )}
-            <div className="flex items-center gap-1 text-xs text-muted-foreground">
-              <Users className="size-3" /> {d.participant_count} joined
-              {d.circle_location && <span> · Meet at {d.circle_location}</span>}
-            </div>
-          </GlassCard>
-        </Link>
-      ))}
+          </Link>
+        ))}
 
-      {!discussions?.length && (
-        <p className="text-sm text-muted-foreground">No discussions yet — start one!</p>
-      )}
+        {!discussions?.length && (
+          <p className="text-sm text-[var(--cc-on-surface-variant)]">No discussions yet — start one!</p>
+        )}
+      </div>
     </div>
   )
 }

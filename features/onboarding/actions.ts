@@ -24,6 +24,9 @@ export async function completeOnboarding(eventId: string, input: OnboardingInput
     company,
     designation,
     city,
+    mobileNumber,
+    whatsappSameAsMobile,
+    whatsappNumber,
     industry,
     industryOther,
     businessStage,
@@ -61,6 +64,21 @@ export async function completeOnboarding(eventId: string, input: OnboardingInput
 
   if (error || !participant) {
     return { success: false as const, error: error?.message ?? "Could not save profile" }
+  }
+
+  const { error: contactsError } = await supabase.from("participant_contacts").upsert(
+    {
+      participant_id: participant.id,
+      event_id: eventId,
+      mobile_number: mobileNumber,
+      whatsapp_number: whatsappSameAsMobile ? mobileNumber : (whatsappNumber ?? mobileNumber),
+      updated_at: new Date().toISOString(),
+    },
+    { onConflict: "participant_id" }
+  )
+
+  if (contactsError) {
+    return { success: false as const, error: contactsError.message }
   }
 
   // The profile save above is the critical path — it already succeeded by

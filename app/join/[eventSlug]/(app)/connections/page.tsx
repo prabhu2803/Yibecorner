@@ -1,5 +1,6 @@
 import { notFound, redirect } from "next/navigation"
 
+import { AppTopBar } from "@/components/shared/AppTopBar"
 import { ConnectionsList, type ConnectionView } from "@/features/connections/ConnectionsList"
 import { getEventBySlug } from "@/lib/queries/events"
 import { createClient } from "@/lib/supabase/server"
@@ -21,7 +22,7 @@ export default async function ConnectionsPage({
 
   const { data: me } = await supabase
     .from("event_participants")
-    .select("id")
+    .select("id, full_name")
     .eq("event_id", result.event.id)
     .eq("user_id", user.id)
     .maybeSingle()
@@ -52,5 +53,12 @@ export default async function ConnectionsPage({
     return { ...c, otherName: nameById.get(otherId) ?? "Someone", otherIsRequester }
   })
 
-  return <ConnectionsList participantId={me.id} initialConnections={views} />
+  const initial = (me.full_name?.trim()[0] ?? "?").toUpperCase()
+
+  return (
+    <div className="-mx-4 flex flex-1 flex-col bg-[var(--cc-surface)]">
+      <AppTopBar homeHref={`/join/${eventSlug}/home`} profileHref={`/join/${eventSlug}/profile`} initial={initial} />
+      <ConnectionsList participantId={me.id} initialConnections={views} />
+    </div>
+  )
 }

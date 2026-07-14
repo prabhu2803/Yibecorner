@@ -1,5 +1,5 @@
-import { OnboardingForm } from "@/features/onboarding/OnboardingForm"
+import { ProfileForm } from "@/features/onboarding/ProfileForm"
 
 export default function ProfilePage() {
-  return <OnboardingForm mode="edit" />
+  return <ProfileForm />
 }

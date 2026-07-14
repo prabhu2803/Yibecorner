@@ -32,6 +32,16 @@ export default async function MyQrPage({
   const baseUrl = await getBaseUrl()
   const scanUrl = `${baseUrl}/join/${eventSlug}/connections/scan?token=${participant.personal_qr_token}`
   const manualCode = participant.personal_qr_token.slice(0, 8).toUpperCase()
+  const initial = (participant.full_name?.trim()[0] ?? "?").toUpperCase()
 
-  return <MyQrCard scanUrl={scanUrl} manualCode={manualCode} fullName={participant.full_name} />
+  return (
+    <MyQrCard
+      scanUrl={scanUrl}
+      manualCode={manualCode}
+      fullName={participant.full_name}
+      homeHref={`/join/${eventSlug}/home`}
+      profileHref={`/join/${eventSlug}/profile`}
+      initial={initial}
+    />
+  )
 }

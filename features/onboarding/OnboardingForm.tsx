@@ -7,6 +7,8 @@ import { useForm } from "react-hook-form"
 import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
+import { Checkbox } from "@/components/ui/checkbox"
+import { CyberConclaveFonts } from "@/components/shared/CyberConclaveFonts"
 import {
   Form,
   FormControl,
@@ -22,7 +24,7 @@ import { ChoiceGrid } from "@/features/onboarding/ChoiceGrid"
 import { MaterialIcon } from "@/features/onboarding/MaterialIcon"
 import { VibiMascot } from "@/features/vibi/VibiMascot"
 import { completeOnboarding } from "@/features/onboarding/actions"
-import { onboardingSchema, type OnboardingInput } from "@/features/onboarding/schema"
+import { onboardingSchema, phoneRegex, type OnboardingInput } from "@/features/onboarding/schema"
 import { TagToggleGroup } from "@/features/onboarding/TagToggleGroup"
 import { useParticipantSession } from "@/features/session/ParticipantSessionProvider"
 import {
@@ -55,6 +57,7 @@ const STEP_ORDER = [
   "company",
   "designation",
   "city",
+  "contact",
   "industry",
   "stage",
   "future-self-pick",
@@ -64,32 +67,6 @@ const STEP_ORDER = [
 ] as const
 
 type Phase = "welcome" | (typeof STEP_ORDER)[number] | "future-self-generating" | "future-self-reveal" | "finding-tribe"
-
-/**
- * Loads the Cyber-Conclave reference's exact fonts + Material Symbols
- * variable font. Rendered as plain <link> tags — React 19 hoists them into
- * <head> and dedupes by href, so it's safe even though this renders inside
- * a client component nested arbitrarily deep in the tree. Scoped to
- * onboarding only: no other route renders this component.
- */
-function CyberConclaveFonts() {
-  return (
-    <>
-      {/* eslint-disable-next-line @next/next/no-page-custom-font -- App Router
-          hoists <link> from any component into <head>; this lint rule predates
-          that support and only knows about the Pages Router convention. */}
-      <link
-        rel="stylesheet"
-        href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Hanken+Grotesk:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap"
-      />
-      {/* eslint-disable-next-line @next/next/no-page-custom-font */}
-      <link
-        rel="stylesheet"
-        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
-      />
-    </>
-  )
-}
 
 /**
  * Persistent chrome for every data-collection step: grid icon + wordmark on
@@ -129,11 +106,11 @@ function useRotatingMessages(messages: string[], intervalMs: number) {
   return messages[index]
 }
 
-export function OnboardingForm({ mode = "create" }: { mode?: "create" | "edit" }) {
+export function OnboardingForm() {
   const router = useRouter()
   const { event, participant, refetchParticipant } = useParticipantSession()
   const [submitting, setSubmitting] = React.useState(false)
-  const [phase, setPhase] = React.useState<Phase>(mode === "create" ? "welcome" : "name")
+  const [phase, setPhase] = React.useState<Phase>("welcome")
   const [direction, setDirection] = React.useState<1 | -1>(1)
 
   const form = useForm<OnboardingInput>({
@@ -143,6 +120,9 @@ export function OnboardingForm({ mode = "create" }: { mode?: "create" | "edit" }
       company: participant?.company ?? "",
       designation: participant?.designation ?? "",
       city: participant?.city ?? "",
+      mobileNumber: "",
+      whatsappSameAsMobile: true,
+      whatsappNumber: "",
       industry: participant?.industry as OnboardingInput["industry"] | undefined,
       industryOther: participant?.industry_other ?? "",
       businessStage: participant?.business_stage,
@@ -164,9 +144,26 @@ export function OnboardingForm({ mode = "create" }: { mode?: "create" | "edit" }
     setPhase(next)
   }
 
-  async function validateAndAdvance(fields: (keyof OnboardingInput)[], next: Phase) {
+  // extraChecks covers conditional-required fields (industryOther,
+  // whatsappNumber) that the schema's superRefine can't enforce mid-wizard
+  // — see the comment on onboardingSchema's superRefine for why.
+  async function validateAndAdvance(
+    fields: (keyof OnboardingInput)[],
+    next: Phase,
+    extraChecks?: { field: keyof OnboardingInput; message: string; isInvalid: () => boolean }[]
+  ) {
     const valid = await form.trigger(fields)
     if (!valid) return
+
+    let hasExtraError = false
+    for (const check of extraChecks ?? []) {
+      if (check.isInvalid()) {
+        form.setError(check.field, { type: "manual", message: check.message })
+        hasExtraError = true
+      }
+    }
+    if (hasExtraError) return
+
     goTo(next, 1)
   }
 
@@ -183,11 +180,7 @@ export function OnboardingForm({ mode = "create" }: { mode?: "create" | "edit" }
     }
 
     await refetchParticipant()
-    if (mode === "create") {
-      router.replace(`/join/${event.slug}/home`)
-    } else {
-      toast.success("Profile updated")
-    }
+    router.replace(`/join/${event.slug}/home`)
   }
 
   // "Finding Your Tribe" — fires the real save + match computation, then
@@ -494,6 +487,92 @@ export function OnboardingForm({ mode = "create" }: { mode?: "create" | "edit" }
                 </>
               )}
 
+              {phase === "contact" && (
+                <>
+                  <div className="mb-2 flex justify-center">
+                    <VibiMascot state="idle" size={120} />
+                  </div>
+                  <div className="mb-4 flex items-center justify-center gap-2">
+                    <span className="h-px w-6 bg-[var(--cc-primary)]" />
+                    <span className="cc-label-tech text-[11px] tracking-widest text-[var(--cc-primary)]/80 uppercase">
+                      Contact Uplink
+                    </span>
+                  </div>
+                  <h1 className="cc-headline mb-6 text-center text-2xl font-bold text-[var(--cc-on-surface)]">
+                    What&apos;s your mobile number?
+                  </h1>
+                  <FormField
+                    control={form.control}
+                    name="mobileNumber"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="sr-only">Mobile number</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="tel"
+                            placeholder="+91 98765 43210"
+                            autoFocus
+                            className="cc-underline-input h-auto rounded-none border-0 border-b-2 border-[var(--cc-outline-variant)] bg-transparent px-0 py-4 text-xl focus-visible:border-[var(--cc-secondary)] focus-visible:ring-0"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="whatsappSameAsMobile"
+                    render={({ field }) => (
+                      <FormItem className="mt-5 flex flex-row items-center gap-2">
+                        <FormControl>
+                          <Checkbox
+                            checked={field.value}
+                            onCheckedChange={(checked) => field.onChange(checked === true)}
+                            className="data-checked:border-[var(--cc-primary)] data-checked:bg-[var(--cc-primary)]"
+                          />
+                        </FormControl>
+                        <FormLabel className="text-sm text-[var(--cc-on-surface)]">
+                          My WhatsApp number is the same as my mobile number
+                        </FormLabel>
+                      </FormItem>
+                    )}
+                  />
+
+                  {!form.watch("whatsappSameAsMobile") && (
+                    <FormField
+                      control={form.control}
+                      name="whatsappNumber"
+                      render={({ field }) => (
+                        <FormItem className="mt-4">
+                          <FormLabel className="text-xs text-[var(--cc-on-surface-variant)]">
+                            WhatsApp Number
+                          </FormLabel>
+                          <FormControl>
+                            <Input
+                              type="tel"
+                              placeholder="+91 98765 43210"
+                              className="cc-underline-input h-auto rounded-none border-0 border-b-2 border-[var(--cc-outline-variant)] bg-transparent px-0 py-4 text-xl focus-visible:border-[var(--cc-secondary)] focus-visible:ring-0"
+                              {...field}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  )}
+
+                  <div className="mt-8 flex items-start gap-2 rounded-2xl bg-[rgba(93,230,255,0.06)] p-4 text-[var(--cc-secondary)]">
+                    <MaterialIcon name="lock" className="mt-0.5 shrink-0 text-[16px]" />
+                    <p className="text-xs text-[var(--cc-on-surface)]">
+                      Your contact information remains completely private. It will only be shared after both
+                      participants mutually agree to exchange contact details.
+                    </p>
+                  </div>
+                </>
+              )}
+
               {phase === "industry" && (
                 <>
                   <h1 className="cc-headline mb-1 text-xl font-bold text-[var(--cc-on-surface)]">
@@ -558,9 +637,7 @@ export function OnboardingForm({ mode = "create" }: { mode?: "create" | "edit" }
 
               {phase === "future-self-pick" && (
                 <>
-                  {mode === "create" && (
-                    <VibiSpeech text="Before we introduce you to other entrepreneurs, let's imagine your future." />
-                  )}
+                  <VibiSpeech text="Before we introduce you to other entrepreneurs, let's imagine your future." />
                   <h1 className="cc-headline mb-1 text-xl font-bold text-[var(--cc-on-surface)]">
                     Pick your future self
                   </h1>
@@ -589,7 +666,7 @@ export function OnboardingForm({ mode = "create" }: { mode?: "create" | "edit" }
 
               {phase === "looking-for" && (
                 <>
-                  {mode === "create" && <VibiSpeech text="Awesome! Now let's help you meet the right people." />}
+                  <VibiSpeech text="Awesome! Now let's help you meet the right people." />
                   <h1 className="cc-headline mb-1 text-xl font-bold text-[var(--cc-on-surface)]">
                     What are you looking for today?
                   </h1>
@@ -634,9 +711,7 @@ export function OnboardingForm({ mode = "create" }: { mode?: "create" | "edit" }
 
               {phase === "challenge" && (
                 <>
-                  {mode === "create" && (
-                    <VibiSpeech text="Every entrepreneur has one challenge they're trying to solve. Let's find people who can help." />
-                  )}
+                  <VibiSpeech text="Every entrepreneur has one challenge they're trying to solve. Let's find people who can help." />
                   <h1 className="cc-headline mb-4 flex items-start gap-2 text-lg leading-snug font-bold text-[var(--cc-on-surface)]">
                     <MaterialIcon name="auto_awesome" className="mt-0.5 shrink-0 text-[20px] text-[var(--cc-tertiary)]" />
                     What&apos;s the one thing that, if solved today, would make this event a success for you?
@@ -728,7 +803,26 @@ export function OnboardingForm({ mode = "create" }: { mode?: "create" | "edit" }
               {phase === "city" && (
                 <Button
                   type="button"
-                  onClick={() => validateAndAdvance(["city"], "industry")}
+                  onClick={() => validateAndAdvance(["city"], "contact")}
+                  className="cc-neon-primary h-14 flex-1 gap-1.5 rounded-xl bg-gradient-to-r from-[var(--cc-primary-container)] to-[var(--cc-secondary-container)] text-[var(--cc-on-primary)]"
+                >
+                  Next <MaterialIcon name="arrow_forward" className="text-[18px]" />
+                </Button>
+              )}
+              {phase === "contact" && (
+                <Button
+                  type="button"
+                  onClick={() =>
+                    validateAndAdvance(["mobileNumber", "whatsappSameAsMobile", "whatsappNumber"], "industry", [
+                      {
+                        field: "whatsappNumber",
+                        message: "Enter a valid WhatsApp number",
+                        isInvalid: () =>
+                          !form.getValues("whatsappSameAsMobile") &&
+                          !phoneRegex.test(form.getValues("whatsappNumber")?.trim() ?? ""),
+                      },
+                    ])
+                  }
                   className="cc-neon-primary h-14 flex-1 gap-1.5 rounded-xl bg-gradient-to-r from-[var(--cc-primary-container)] to-[var(--cc-secondary-container)] text-[var(--cc-on-primary)]"
                 >
                   Next <MaterialIcon name="arrow_forward" className="text-[18px]" />
@@ -737,7 +831,15 @@ export function OnboardingForm({ mode = "create" }: { mode?: "create" | "edit" }
               {phase === "industry" && (
                 <Button
                   type="button"
-                  onClick={() => validateAndAdvance(["industry", "industryOther"], "stage")}
+                  onClick={() =>
+                    validateAndAdvance(["industry", "industryOther"], "stage", [
+                      {
+                        field: "industryOther",
+                        message: "Tell us your industry",
+                        isInvalid: () => form.getValues("industry") === "other" && !form.getValues("industryOther")?.trim(),
+                      },
+                    ])
+                  }
                   className="cc-neon-primary h-14 flex-1 gap-1.5 rounded-xl bg-gradient-to-r from-[var(--cc-primary-container)] to-[var(--cc-secondary-container)] text-[var(--cc-on-primary)]"
                 >
                   Next <MaterialIcon name="arrow_forward" className="text-[18px]" />
@@ -746,9 +848,7 @@ export function OnboardingForm({ mode = "create" }: { mode?: "create" | "edit" }
               {phase === "stage" && (
                 <Button
                   type="button"
-                  onClick={() =>
-                    validateAndAdvance(["businessStage"], mode === "create" ? "future-self-pick" : "looking-for")
-                  }
+                  onClick={() => validateAndAdvance(["businessStage"], "future-self-pick")}
                   className="cc-neon-primary h-14 flex-1 gap-1.5 rounded-xl bg-gradient-to-r from-[var(--cc-primary-container)] to-[var(--cc-secondary-container)] text-[var(--cc-on-primary)]"
                 >
                   Next <MaterialIcon name="arrow_forward" className="text-[18px]" />
@@ -786,10 +886,10 @@ export function OnboardingForm({ mode = "create" }: { mode?: "create" | "edit" }
                 <Button
                   type="button"
                   disabled={submitting}
-                  onClick={() => (mode === "create" ? goTo("finding-tribe", 1) : finish())}
+                  onClick={() => goTo("finding-tribe", 1)}
                   className="cc-neon-primary h-14 flex-1 rounded-xl bg-gradient-to-r from-[var(--cc-primary-container)] to-[var(--cc-secondary-container)] text-[var(--cc-on-primary)]"
                 >
-                  {submitting ? "Saving..." : mode === "create" ? "Find My Tribe" : "Save Changes"}
+                  {submitting ? "Saving..." : "Find My Tribe"}
                 </Button>
               )}
             </div>

@@ -1,11 +1,10 @@
 "use client"
 
 import * as React from "react"
-import { CheckCircle2, Clock, XCircle } from "lucide-react"
 import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
-import { GlassCard } from "@/components/shared/GlassCard"
+import { MaterialIcon } from "@/features/onboarding/MaterialIcon"
 import { realtimeChannels } from "@/lib/realtime/channels"
 import { createClient } from "@/lib/supabase/client"
 import type { Database } from "@/types/database.types"
@@ -88,55 +87,70 @@ export function ConnectionsList({
   const waitingOnThem = connections.filter((c) => c.status === "pending" && c.requester_id === participantId)
 
   return (
-    <div className="flex flex-col gap-6 py-6">
-      <h1 className="text-xl font-bold">My Connections</h1>
+    <div className="flex flex-col gap-6 px-4 py-6">
+      <h1 className="cc-headline text-xl font-bold text-[var(--cc-on-surface)]">My Connections</h1>
 
       {pendingForMe.length > 0 && (
         <section className="flex flex-col gap-2">
-          <h2 className="text-sm font-semibold text-muted-foreground">Confirm these</h2>
+          <h2 className="cc-label-tech text-[11px] tracking-widest text-[var(--cc-on-surface-variant)] uppercase">
+            Confirm these
+          </h2>
           {pendingForMe.map((c) => (
-            <GlassCard key={c.id} className="flex items-center justify-between py-3">
-              <span className="font-medium">{c.otherName}</span>
+            <div key={c.id} className="cc-glass-panel flex items-center justify-between rounded-2xl px-4 py-3">
+              <span className="font-medium text-[var(--cc-on-surface)]">{c.otherName}</span>
               <div className="flex gap-2">
-                <Button size="sm" variant="ghost" onClick={() => respond(c.id, "reject")}>
-                  <XCircle className="size-4" />
+                <Button
+                  size="sm"
+                  className="cc-glass-panel rounded-xl p-0 text-[var(--cc-on-surface-variant)]"
+                  onClick={() => respond(c.id, "reject")}
+                >
+                  <MaterialIcon name="close" className="text-[16px]" />
                 </Button>
-                <Button size="sm" onClick={() => respond(c.id, "confirm")}>
-                  <CheckCircle2 className="size-4" />
+                <Button
+                  size="sm"
+                  className="cc-neon-primary gap-1 rounded-xl bg-gradient-to-r from-[var(--cc-primary-container)] to-[var(--cc-secondary-container)] text-[var(--cc-on-primary)]"
+                  onClick={() => respond(c.id, "confirm")}
+                >
+                  <MaterialIcon name="check_circle" className="text-[16px]" />
                   Confirm
                 </Button>
               </div>
-            </GlassCard>
+            </div>
           ))}
         </section>
       )}
 
       {waitingOnThem.length > 0 && (
         <section className="flex flex-col gap-2">
-          <h2 className="text-sm font-semibold text-muted-foreground">Waiting for them to confirm</h2>
+          <h2 className="cc-label-tech text-[11px] tracking-widest text-[var(--cc-on-surface-variant)] uppercase">
+            Waiting for them to confirm
+          </h2>
           {waitingOnThem.map((c) => (
-            <GlassCard key={c.id} className="flex items-center justify-between py-3 text-muted-foreground">
+            <div
+              key={c.id}
+              className="cc-glass-panel flex items-center justify-between rounded-2xl px-4 py-3 text-[var(--cc-on-surface-variant)]"
+            >
               <span>{c.otherName}</span>
-              <Clock className="size-4" />
-            </GlassCard>
+              <MaterialIcon name="schedule" className="text-[18px]" />
+            </div>
           ))}
         </section>
       )}
 
       <section className="flex flex-col gap-2">
-        <h2 className="text-sm font-semibold text-muted-foreground">
+        <h2 className="cc-label-tech text-[11px] tracking-widest text-[var(--cc-on-surface-variant)] uppercase">
           Verified Connections ({verified.length})
         </h2>
         {verified.length === 0 ? (
-          <p className="text-sm text-muted-foreground">
+          <p className="text-sm text-[var(--cc-on-surface-variant)]">
             No verified connections yet — scan someone&apos;s QR to get started.
           </p>
         ) : (
           verified.map((c) => (
-            <GlassCard key={c.id} className="flex items-center gap-3 py-3">
-              <CheckCircle2 className="size-5 text-accent" />
-              <span className="font-medium">{c.otherName}</span>
-            </GlassCard>
+            <div key={c.id} className="cc-glass-panel flex items-center gap-3 rounded-2xl px-4 py-3">
+              <MaterialIcon name="check_circle" className="text-[20px] text-[var(--cc-secondary)]" />
+              <span className="font-medium text-[var(--cc-on-surface)]">{c.otherName}</span>
+            </div>
           ))
         )}
       </section>

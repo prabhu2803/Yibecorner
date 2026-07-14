@@ -17,12 +17,26 @@ const businessStageValues = BUSINESS_STAGES.map((s) => s.value) as unknown as [
 const tagValues = TAGS.map((t) => t.value) as unknown as [TagValue, ...TagValue[]]
 const challengeCategoryValues = CHALLENGE_CATEGORIES as unknown as [ChallengeCategory, ...ChallengeCategory[]]
 
+// Permissive on purpose — this only guards against obviously-wrong input
+// (letters, too short), not real phone validation. No OTP verification for
+// the MVP per spec, so this is the only gate before the number is stored.
+// Exported so the wizard's per-step manual cross-field checks (see
+// OnboardingForm's validateAndAdvance) can reuse the exact same rule
+// instead of duplicating it — see the comment on the superRefine below for
+// why those checks can't just rely on this schema's superRefine mid-wizard.
+export const phoneRegex = /^[+\d][\d\s\-()]{6,}$/
+
 export const onboardingSchema = z
   .object({
     fullName: z.string().trim().min(2, "Enter your full name").max(100),
     company: z.string().trim().min(2, "Enter where you work").max(120),
     designation: z.string().trim().min(2, "Enter your role").max(120),
     city: z.string().trim().min(2, "Enter your city").max(120),
+    mobileNumber: z.string().trim().regex(phoneRegex, "Enter a valid mobile number"),
+    whatsappSameAsMobile: z.boolean(),
+    // Only required when whatsappSameAsMobile is false — enforced below via
+    // superRefine, mirroring the industryOther pattern.
+    whatsappNumber: z.string().trim().optional().or(z.literal("")),
     industry: z.enum(INDUSTRIES, { message: "Pick your industry" }),
     // Only required when industry === "other" — enforced below via
     // superRefine rather than a plain .min(), since it must stay optional
@@ -35,12 +49,28 @@ export const onboardingSchema = z
     challengeCategory: z.enum(challengeCategoryValues).optional(),
     futureSelfAspiration: z.string().trim().max(60).optional().or(z.literal("")),
   })
+  // Zod v4 only runs superRefine when every other field in the object
+  // shape has already parsed successfully — mid-wizard, later steps'
+  // required fields (industry, businessStage, tags...) are still empty
+  // while validating an earlier step, so these checks silently never fire
+  // via form.trigger() until the very last step. The wizard therefore
+  // duplicates these two conditions as manual checks in OnboardingForm's
+  // validateAndAdvance; this superRefine still matters for the final
+  // whole-object submit in completeOnboarding, where every field really is
+  // populated by then.
   .superRefine((data, ctx) => {
     if (data.industry === "other" && !data.industryOther?.trim()) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         message: "Tell us your industry",
         path: ["industryOther"],
+      })
+    }
+    if (!data.whatsappSameAsMobile && !phoneRegex.test(data.whatsappNumber?.trim() ?? "")) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Enter a valid WhatsApp number",
+        path: ["whatsappNumber"],
       })
     }
   })

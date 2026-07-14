@@ -150,6 +150,23 @@ export interface Database {
         Update: Partial<Database["public"]["Tables"]["event_participants"]["Row"]>
         Relationships: []
       }
+      participant_contacts: {
+        Row: {
+          participant_id: string
+          event_id: string
+          mobile_number: string
+          whatsapp_number: string
+          updated_at: string
+        }
+        Insert: Partial<Database["public"]["Tables"]["participant_contacts"]["Row"]> & {
+          participant_id: string
+          event_id: string
+          mobile_number: string
+          whatsapp_number: string
+        }
+        Update: Partial<Database["public"]["Tables"]["participant_contacts"]["Row"]>
+        Relationships: []
+      }
       matches: {
         Row: {
           id: string
