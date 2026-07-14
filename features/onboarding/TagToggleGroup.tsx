@@ -31,10 +31,10 @@ export function TagToggleGroup<T extends string>({
             type="button"
             onClick={() => toggle(option.value)}
             className={cn(
-              "rounded-full border px-3 py-1.5 text-sm font-medium transition",
+              "cc-glass-panel cc-label-tech rounded-full px-3.5 py-1.5 text-xs uppercase transition",
               selected
-                ? "glow-primary border-primary bg-primary text-primary-foreground"
-                : "border-white/15 bg-white/5 text-muted-foreground hover:bg-white/10"
+                ? "cc-neon-secondary !border-[var(--cc-secondary)] bg-[rgba(0,203,230,0.12)] text-[var(--cc-secondary)]"
+                : "text-[var(--cc-on-surface-variant)] hover:border-[rgba(93,230,255,0.4)]"
             )}
           >
             {option.label}

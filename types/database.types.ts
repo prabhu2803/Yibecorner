@@ -124,11 +124,16 @@ export interface Database {
           user_id: string
           full_name: string
           company: string | null
+          designation: string | null
+          city: string | null
           industry: string
+          industry_other: string | null
           business_stage: BusinessStage
           looking_for: string[]
           can_help_with: string[]
           biggest_challenge: string | null
+          challenge_category: string | null
+          future_self_aspiration: string | null
           personal_qr_token: string
           contribution_score: number
           onboarding_completed_at: string | null

@@ -264,4 +264,101 @@
       linear-gradient(to bottom, oklch(0.6 0.21 293 / 0.06) 1px, transparent 1px);
     background-size: 40px 40px;
   }
+
+  /*
+    Cyber-Conclave — the onboarding flow's own design system, scoped entirely
+    under .cc-scope so it never bleeds into the landing page / TV screen /
+    admin dashboard, which keep the violet-amber-cyan OKLCH theme above.
+    Values are the exact hex tokens from the reference design system, not
+    reprojected into the app's OKLCH palette, so onboarding matches it
+    pixel-for-pixel rather than "in spirit."
+  */
+  .cc-scope {
+    --cc-surface: #0b1326;
+    --cc-surface-lowest: #060e20;
+    --cc-surface-low: #131b2e;
+    --cc-surface-container: #171f33;
+    --cc-surface-high: #222a3d;
+    --cc-surface-highest: #2d3449;
+    --cc-on-surface: #dae2fd;
+    --cc-on-surface-variant: #cfc2d6;
+    --cc-primary: #ddb7ff;
+    --cc-on-primary: #490080;
+    --cc-primary-container: #b76dff;
+    --cc-secondary: #5de6ff;
+    --cc-secondary-container: #00cbe6;
+    --cc-tertiary: #ffb95f;
+    --cc-outline: #988d9f;
+    --cc-outline-variant: #4d4354;
+    font-family: "Hanken Grotesk", sans-serif;
+    color: var(--cc-on-surface);
+  }
+
+  .cc-headline {
+    font-family: "Space Grotesk", sans-serif;
+    letter-spacing: -0.01em;
+  }
+
+  .cc-label-tech {
+    font-family: "JetBrains Mono", monospace;
+    letter-spacing: 0.1em;
+  }
+
+  .cc-glass-panel {
+    background: rgba(30, 41, 59, 0.7);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(221, 183, 255, 0.15);
+    box-shadow: inset 1px 1px 0 rgba(255, 255, 255, 0.05);
+  }
+
+  .cc-neon-primary {
+    box-shadow: 0 0 20px rgba(221, 183, 255, 0.4);
+  }
+
+  .cc-neon-secondary {
+    box-shadow: 0 0 20px rgba(93, 230, 255, 0.35);
+  }
+
+  .cc-scope input,
+  .cc-scope textarea {
+    background: var(--cc-surface-lowest);
+    border-color: var(--cc-outline-variant);
+    color: var(--cc-on-surface);
+  }
+
+  .cc-scope input:focus-visible,
+  .cc-scope textarea:focus-visible {
+    border-color: var(--cc-secondary);
+    box-shadow: 0 0 0 3px rgba(93, 230, 255, 0.18);
+  }
+
+  .cc-scope input::placeholder,
+  .cc-scope textarea::placeholder {
+    color: rgba(218, 226, 253, 0.35);
+  }
+
+  .cc-scope .material-symbols-outlined {
+    font-variation-settings:
+      "FILL" 0,
+      "wght" 400,
+      "GRAD" 0,
+      "opsz" 24;
+  }
+
+  /* Underline-style inputs (Identity Matrix cluster) opt out of the generic
+     boxed-input focus glow above — a bottom-border color change is enough,
+     matching the reference exactly instead of a halo around a borderless
+     field. Needs the extra .cc-underline-input class to out-specificity the
+     generic .cc-scope input:focus-visible rule. */
+  .cc-scope input.cc-underline-input:focus-visible {
+    box-shadow: none;
+  }
+
+  .cc-grid-bg {
+    background-image:
+      linear-gradient(rgba(93, 230, 255, 0.05) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(93, 230, 255, 0.05) 1px, transparent 1px);
+    background-size: 40px 40px;
+  }
 }

@@ -22,11 +22,16 @@ export async function completeOnboarding(eventId: string, input: OnboardingInput
   const {
     fullName,
     company,
+    designation,
+    city,
     industry,
+    industryOther,
     businessStage,
     lookingFor,
     canHelpWith,
     biggestChallenge,
+    challengeCategory,
+    futureSelfAspiration,
   } = parsed.data
 
   const { data: participant, error } = await supabase
@@ -37,11 +42,16 @@ export async function completeOnboarding(eventId: string, input: OnboardingInput
         user_id: user.id,
         full_name: fullName,
         company: company || null,
+        designation: designation || null,
+        city: city || null,
         industry,
+        industry_other: industry === "other" ? industryOther || null : null,
         business_stage: businessStage,
         looking_for: lookingFor,
         can_help_with: canHelpWith,
         biggest_challenge: biggestChallenge || null,
+        challenge_category: challengeCategory || null,
+        future_self_aspiration: futureSelfAspiration || null,
         onboarding_completed_at: new Date().toISOString(),
       },
       { onConflict: "event_id,user_id" }
@@ -53,16 +63,28 @@ export async function completeOnboarding(eventId: string, input: OnboardingInput
     return { success: false as const, error: error?.message ?? "Could not save profile" }
   }
 
-  await supabase.from("analytics_events").insert({
-    event_id: eventId,
-    participant_id: participant.id,
-    event_name: "onboarding_completed",
-    metadata: { industry, business_stage: businessStage },
-  })
+  // The profile save above is the critical path — it already succeeded by
+  // this point. Analytics and match computation are best-effort: a failure
+  // here (e.g. a misconfigured service-role key) must not turn a successful
+  // onboarding save into a 500 for the participant.
+  try {
+    await supabase.from("analytics_events").insert({
+      event_id: eventId,
+      participant_id: participant.id,
+      event_name: "onboarding_completed",
+      metadata: { industry, business_stage: businessStage },
+    })
+  } catch (err) {
+    console.error("onboarding_completed analytics insert failed:", err)
+  }
 
-  // Fire-and-forget from the caller's perspective, but awaited here so the
-  // participant's /matches page has results the moment they land on it.
-  await computeMatchesForParticipant(eventId, participant.id)
+  try {
+    // Awaited (not fire-and-forget) so the participant's /matches page has
+    // results the moment they land on it, when this succeeds.
+    await computeMatchesForParticipant(eventId, participant.id)
+  } catch (err) {
+    console.error("computeMatchesForParticipant failed:", err)
+  }
 
   return { success: true as const, participant }
 }
