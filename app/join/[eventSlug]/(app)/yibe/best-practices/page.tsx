@@ -1,8 +1,7 @@
-import Link from "next/link"
 import { notFound, redirect } from "next/navigation"
 
 import { AppTopBar } from "@/components/shared/AppTopBar"
-import { MaterialIcon } from "@/features/onboarding/MaterialIcon"
+import { BestPracticeList } from "@/features/best-practices/BestPracticeList"
 import { NewBestPracticeDialog } from "@/features/best-practices/NewBestPracticeDialog"
 import { getEventBySlug } from "@/lib/queries/events"
 import { createClient } from "@/lib/supabase/server"
@@ -24,7 +23,7 @@ export default async function BestPracticesPage({
 
   const { data: me } = await supabase
     .from("event_participants")
-    .select("full_name")
+    .select("id, full_name")
     .eq("event_id", result.event.id)
     .eq("user_id", user.id)
     .maybeSingle()
@@ -35,6 +34,11 @@ export default async function BestPracticesPage({
     .select("*")
     .eq("event_id", result.event.id)
     .order("upvote_count", { ascending: false })
+
+  const { data: saves } = me
+    ? await supabase.from("best_practice_saves").select("best_practice_id").eq("participant_id", me.id)
+    : { data: [] }
+  const savedIds = (saves ?? []).map((s) => s.best_practice_id)
 
   return (
     <div className="-mx-4 flex flex-1 flex-col bg-[var(--cc-surface)]">
@@ -49,26 +53,7 @@ export default async function BestPracticesPage({
           <NewBestPracticeDialog eventSlug={eventSlug} eventId={result.event.id} />
         </div>
 
-        {practices?.map((p) => (
-          <Link key={p.id} href={`/join/${eventSlug}/yibe/best-practices/${p.id}`}>
-            <div className="cc-glass-panel flex flex-col gap-2 rounded-2xl p-4 transition hover:border-[var(--cc-primary)]/40">
-              <p className="font-semibold text-[var(--cc-on-surface)]">{p.title}</p>
-              <p className="line-clamp-2 text-sm text-[var(--cc-on-surface-variant)]">{p.body}</p>
-              <div className="flex items-center gap-4 text-xs text-[var(--cc-on-surface-variant)]">
-                <span className="flex items-center gap-1">
-                  <MaterialIcon name="thumb_up" className="text-[14px]" /> {p.upvote_count}
-                </span>
-                <span className="flex items-center gap-1">
-                  <MaterialIcon name="bookmark" className="text-[14px]" /> {p.save_count}
-                </span>
-              </div>
-            </div>
-          </Link>
-        ))}
-
-        {!practices?.length && (
-          <p className="text-sm text-[var(--cc-on-surface-variant)]">No best practices shared yet.</p>
-        )}
+        <BestPracticeList eventSlug={eventSlug} practices={practices ?? []} savedIds={savedIds} />
       </div>
     </div>
   )

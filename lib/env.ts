@@ -8,6 +8,10 @@ const clientSchema = z.object({
 
 const serverSchema = clientSchema.extend({
   SUPABASE_SERVICE_ROLE_KEY: z.string().min(1).optional(),
+  // Optional — Future Self image generation (generateFutureSelfImage.ts)
+  // falls back to the placeholder reveal card when this isn't set, rather
+  // than throwing, so the app works with no key configured.
+  GEMINI_API_KEY: z.string().min(1).optional(),
 })
 
 function parse<T extends z.ZodTypeAny>(schema: T, values: Record<string, string | undefined>) {
@@ -32,4 +36,5 @@ export const serverEnv = parse(serverSchema, {
   NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
   NEXT_PUBLIC_DEFAULT_EVENT_SLUG: process.env.NEXT_PUBLIC_DEFAULT_EVENT_SLUG,
   SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY,
+  GEMINI_API_KEY: process.env.GEMINI_API_KEY,
 })

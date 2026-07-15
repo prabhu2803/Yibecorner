@@ -91,16 +91,19 @@ export default async function HomePage() {
 
             <div className="flex items-center gap-4">
               <VibiMascot state="look_at_qr" size={80} />
-              <div className="rounded-2xl bg-white p-4">
+              {/* On a phone you can't scan your own screen — the QR image
+                  itself is a tap target straight to /join/[slug] too, not
+                  just decorative, so mobile visitors have something to tap. */}
+              <Link href={`/join/${slug}`} className="rounded-2xl bg-white p-4 transition active:scale-95">
                 <QRCodeSVG value={joinUrl} size={168} />
-              </div>
+              </Link>
             </div>
 
             <Link
               href={`/join/${slug}`}
-              className="font-[family-name:var(--font-jetbrains-mono)] text-xs tracking-widest text-cyan uppercase hover:underline"
+              className="font-[family-name:var(--font-jetbrains-mono)] rounded-full border border-cyan/40 px-4 py-2 text-xs tracking-widest text-cyan uppercase transition hover:bg-cyan/10 active:scale-95"
             >
-              Scan to Get Started
+              Tap to Get Started
             </Link>
           </div>
         </div>

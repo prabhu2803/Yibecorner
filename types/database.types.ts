@@ -134,6 +134,7 @@ export interface Database {
           biggest_challenge: string | null
           challenge_category: string | null
           future_self_aspiration: string | null
+          future_self_image_url: string | null
           personal_qr_token: string
           contribution_score: number
           onboarding_completed_at: string | null

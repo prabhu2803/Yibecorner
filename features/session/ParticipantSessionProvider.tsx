@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import { useRouter } from "next/navigation"
 
 import { VibiMascot } from "@/features/vibi/VibiMascot"
 import { createClient } from "@/lib/supabase/client"
@@ -20,6 +21,24 @@ interface ParticipantSessionValue {
   contacts: ContactsRow | null
   loading: boolean
   refetchParticipant: () => Promise<void>
+  /**
+   * Sign out and navigate to `redirectTo` (default "/"). Deliberately
+   * routed through the provider rather than called inline by consumers
+   * (e.g. ProfileForm) — this component's own `if (loading) return
+   * <spinner>` below unmounts `children` entirely while the fresh
+   * anonymous session re-establishes, so any "don't redirect to
+   * onboarding, we're signing out" flag kept in a child component (a
+   * ref, state) gets wiped out by that remount. The flag has to live
+   * here, in the component that actually survives the loading toggle.
+   */
+  signOut: (redirectTo?: string) => Promise<void>
+  /** True from the moment `signOut()` is called until this provider
+   *  unmounts for real (a genuine route change away from /join/[eventSlug],
+   *  not just this loading toggle). Consumers' own "no participant ->
+   *  redirect to onboarding" effects should skip firing while this is
+   *  true, since the fresh anonymous session SIGNED_OUT re-establishes
+   *  legitimately has no participant either. */
+  isSigningOutRef: React.RefObject<boolean>
 }
 
 const ParticipantSessionContext = React.createContext<ParticipantSessionValue | null>(null)
@@ -36,10 +55,17 @@ export function ParticipantSessionProvider({
   event: EventRow
   children: React.ReactNode
 }) {
+  const router = useRouter()
   const [userId, setUserId] = React.useState<string | null>(null)
   const [participant, setParticipant] = React.useState<ParticipantRow | null>(null)
   const [contacts, setContacts] = React.useState<ContactsRow | null>(null)
   const [loading, setLoading] = React.useState(true)
+  // A ref, not state — this provider's own `if (loading) return <spinner>`
+  // below unmounts `children` (e.g. ProfileForm) while SIGNED_OUT's fresh
+  // anonymous session re-establishes, so any equivalent flag kept in a
+  // child component gets wiped out by that remount. This ref lives on the
+  // provider itself, which is never unmounted, only its render toggles.
+  const isSigningOutRef = React.useRef(false)
 
   const fetchParticipant = React.useCallback(
     async (uid: string) => {
@@ -126,6 +152,17 @@ export function ParticipantSessionProvider({
     if (userId) await fetchParticipant(userId)
   }, [userId, fetchParticipant])
 
+  const signOut = React.useCallback(
+    async (redirectTo: string = "/") => {
+      isSigningOutRef.current = true
+      const supabase = createClient()
+      await supabase.auth.signOut()
+      router.replace(redirectTo)
+      router.refresh()
+    },
+    [router]
+  )
+
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
@@ -136,7 +173,7 @@ export function ParticipantSessionProvider({
 
   return (
     <ParticipantSessionContext.Provider
-      value={{ event, userId, participant, contacts, loading, refetchParticipant }}
+      value={{ event, userId, participant, contacts, loading, refetchParticipant, signOut, isSigningOutRef }}
     >
       {children}
     </ParticipantSessionContext.Provider>

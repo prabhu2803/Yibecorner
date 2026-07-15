@@ -16,7 +16,11 @@ function deriveChallengeTitle(text: string): string {
   return `${cut.slice(0, lastSpace > 40 ? lastSpace : 100)}…`
 }
 
-export async function completeOnboarding(eventId: string, input: OnboardingInput) {
+export async function completeOnboarding(
+  eventId: string,
+  input: OnboardingInput,
+  futureSelfImageUrl?: string
+) {
   const parsed = onboardingSchema.safeParse(input)
   if (!parsed.success) {
     return { success: false as const, error: parsed.error.issues[0]?.message ?? "Invalid input" }
@@ -120,6 +124,11 @@ export async function completeOnboarding(eventId: string, input: OnboardingInput
         biggest_challenge: biggestChallenge || null,
         challenge_category: challengeCategory || null,
         future_self_aspiration: futureSelfAspiration || null,
+        // Only set on the upsert that actually generated a new image (the
+        // first-time onboarding flow) — omitted entirely on later profile
+        // edits (ProfileForm never passes this arg) so an already-saved
+        // souvenir isn't wiped out by a routine field edit.
+        ...(futureSelfImageUrl ? { future_self_image_url: futureSelfImageUrl } : {}),
         onboarding_completed_at: new Date().toISOString(),
       },
       { onConflict: "event_id,user_id" }

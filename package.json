@@ -11,6 +11,7 @@
     "db:types": "supabase gen types typescript --local > types/database.types.ts"
   },
   "dependencies": {
+    "@google/genai": "^2.11.0",
     "@gsap/react": "^2.1.2",
     "@hookform/resolvers": "^5.4.0",
     "@supabase/ssr": "^0.12.0",

@@ -24,6 +24,8 @@ import { ChoiceGrid } from "@/features/onboarding/ChoiceGrid"
 import { MaterialIcon } from "@/features/onboarding/MaterialIcon"
 import { VibiMascot } from "@/features/vibi/VibiMascot"
 import { completeOnboarding } from "@/features/onboarding/actions"
+import { generateFutureSelfImage } from "@/features/onboarding/generateFutureSelfImage"
+import { SelfieCapture } from "@/features/onboarding/SelfieCapture"
 import { onboardingSchema, phoneRegex, type OnboardingInput } from "@/features/onboarding/schema"
 import { TagToggleGroup } from "@/features/onboarding/TagToggleGroup"
 import { useParticipantSession } from "@/features/session/ParticipantSessionProvider"
@@ -66,7 +68,13 @@ const STEP_ORDER = [
   "challenge",
 ] as const
 
-type Phase = "welcome" | (typeof STEP_ORDER)[number] | "future-self-generating" | "future-self-reveal" | "finding-tribe"
+type Phase =
+  | "welcome"
+  | (typeof STEP_ORDER)[number]
+  | "future-self-selfie"
+  | "future-self-generating"
+  | "future-self-reveal"
+  | "finding-tribe"
 
 /**
  * Persistent chrome for every data-collection step: grid icon + wordmark on
@@ -112,6 +120,8 @@ export function OnboardingForm() {
   const [submitting, setSubmitting] = React.useState(false)
   const [phase, setPhase] = React.useState<Phase>("welcome")
   const [direction, setDirection] = React.useState<1 | -1>(1)
+  const [futureSelfImageUrl, setFutureSelfImageUrl] = React.useState<string | null>(null)
+  const [selfieDataUrl, setSelfieDataUrl] = React.useState<string | null>(null)
 
   const form = useForm<OnboardingInput>({
     resolver: zodResolver(onboardingSchema),
@@ -170,7 +180,7 @@ export function OnboardingForm() {
   async function finish() {
     setSubmitting(true)
     const values = form.getValues()
-    const result = await completeOnboarding(event.id, values)
+    const result = await completeOnboarding(event.id, values, futureSelfImageUrl ?? undefined)
     setSubmitting(false)
 
     if (!result.success) {
@@ -196,13 +206,39 @@ export function OnboardingForm() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase])
 
-  // "Future Self Studio" reveal timer — hooks must run unconditionally on
-  // every render (not just when phase === "future-self-generating"), so
-  // this lives at the top level and gates its own body internally.
+  // "Future Self Studio" — kicks off real Gemini image generation (falls
+  // back to null, and the reveal card's existing icon+label placeholder,
+  // if no GEMINI_API_KEY is configured or the call fails). Minimum dwell
+  // time mirrors the "finding-tribe" effect above so a fast response
+  // doesn't feel jarringly instant and a slow one doesn't feel broken.
+  // Hooks must run unconditionally on every render (not just when
+  // phase === "future-self-generating"), so this lives at the top level
+  // and gates its own body internally.
   React.useEffect(() => {
     if (phase !== "future-self-generating") return
-    const t = setTimeout(() => goTo("future-self-reveal", 1), 2400)
-    return () => clearTimeout(t)
+    const started = Date.now()
+    void (async () => {
+      const aspiration = FUTURE_SELF_ASPIRATIONS.find((a) => a.value === form.getValues("futureSelfAspiration"))
+      // selfieDataUrl is a "data:image/jpeg;base64,...." URL — Gemini's
+      // inlineData wants just the base64 payload and the mime type
+      // separately.
+      const selfieMatch = selfieDataUrl?.match(/^data:(.+);base64,(.*)$/)
+      const result = await generateFutureSelfImage({
+        designation: form.getValues("designation"),
+        company: form.getValues("company"),
+        industry: form.getValues("industry"),
+        aspirationLabel: aspiration?.label ?? "Future Self",
+        aspirationDescription: aspiration?.description ?? "",
+        selfieBase64: selfieMatch?.[2],
+        selfieMimeType: selfieMatch?.[1],
+      })
+      setFutureSelfImageUrl(result.success ? result.imageUrl : null)
+
+      const elapsed = Date.now() - started
+      if (elapsed < 2400) await new Promise((r) => setTimeout(r, 2400 - elapsed))
+      goTo("future-self-reveal", 1)
+    })()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase])
 
   // Same rule applies to these — always called, values only used in the
@@ -242,6 +278,19 @@ export function OnboardingForm() {
         </div>
       </div>
     )
+  } else if (phase === "future-self-selfie") {
+    content = (
+      <SelfieCapture
+        onCapture={(dataUrl) => {
+          setSelfieDataUrl(dataUrl)
+          goTo("future-self-generating", 1)
+        }}
+        onSkip={() => {
+          setSelfieDataUrl(null)
+          goTo("future-self-generating", 1)
+        }}
+      />
+    )
   } else if (phase === "future-self-generating") {
     content = (
       <div className="flex flex-1 flex-col items-center justify-center gap-6 py-10 text-center">
@@ -255,16 +304,27 @@ export function OnboardingForm() {
       <div className="flex flex-1 flex-col items-center justify-center gap-6 py-10 text-center">
         <VibiMascot state="celebrate" size={120} />
         <div className="cc-glass-panel w-full max-w-xs rounded-2xl p-8">
-          <div className="mx-auto flex size-16 items-center justify-center rounded-full bg-[rgba(221,183,255,0.1)] text-[var(--cc-primary)]">
-            <MaterialIcon name={aspiration?.icon ?? "auto_awesome"} className="text-[32px]" />
-          </div>
+          {futureSelfImageUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={futureSelfImageUrl}
+              alt={aspiration?.label ?? "Your Future Self"}
+              className="mx-auto aspect-square w-full rounded-xl object-cover"
+            />
+          ) : (
+            <div className="mx-auto flex size-16 items-center justify-center rounded-full bg-[rgba(221,183,255,0.1)] text-[var(--cc-primary)]">
+              <MaterialIcon name={aspiration?.icon ?? "auto_awesome"} className="text-[32px]" />
+            </div>
+          )}
           <h2 className="cc-headline mt-3 text-xl font-bold text-[var(--cc-on-surface)]">
             {aspiration?.label ?? "Your Future Self"}
           </h2>
           <p className="mt-1 text-sm text-[var(--cc-on-surface-variant)]">{form.getValues("fullName")}</p>
-          <p className="mt-4 text-xs text-[var(--cc-on-surface-variant)]">
-            Full AI-generated souvenir coming soon — this is a preview of what you picked.
-          </p>
+          {!futureSelfImageUrl && (
+            <p className="mt-4 text-xs text-[var(--cc-on-surface-variant)]">
+              Full AI-generated souvenir coming soon — this is a preview of what you picked.
+            </p>
+          )}
         </div>
         <Button
           onClick={() => goTo("looking-for", 1)}
@@ -858,7 +918,7 @@ export function OnboardingForm() {
                 <Button
                   type="button"
                   disabled={!form.watch("futureSelfAspiration")}
-                  onClick={() => goTo("future-self-generating", 1)}
+                  onClick={() => goTo("future-self-selfie", 1)}
                   className="cc-neon-primary h-14 flex-1 gap-1.5 rounded-xl bg-gradient-to-r from-[var(--cc-primary-container)] to-[var(--cc-secondary-container)] text-[var(--cc-on-primary)]"
                 >
                   Reveal My Future <MaterialIcon name="arrow_forward" className="text-[18px]" />
