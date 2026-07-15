@@ -2,9 +2,9 @@
 
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts"
 
-const ACCENT = "oklch(0.78 0.15 70)"
-const GRID = "oklch(1 0 0 / 8%)"
-const MUTED_TEXT = "oklch(0.72 0.03 288)"
+const ACCENT = "#ddb7ff"
+const GRID = "rgba(255, 255, 255, 0.08)"
+const MUTED_TEXT = "#cfc2d6"
 
 export function EngagementTimeline({ data }: { data: { day: string; count: number }[] }) {
   if (data.length === 0) {
@@ -25,12 +25,12 @@ export function EngagementTimeline({ data }: { data: { day: string; count: numbe
           />
           <YAxis stroke={MUTED_TEXT} fontSize={12} tickLine={false} axisLine={false} allowDecimals={false} />
           <Tooltip
-            cursor={{ fill: "oklch(1 0 0 / 6%)" }}
+            cursor={{ fill: "rgba(255, 255, 255, 0.06)" }}
             contentStyle={{
-              background: "oklch(0.21 0.045 288)",
-              border: "1px solid oklch(1 0 0 / 12%)",
+              background: "#171f33",
+              border: "1px solid rgba(221, 183, 255, 0.15)",
               borderRadius: 12,
-              color: "oklch(0.96 0.01 290)",
+              color: "#dae2fd",
               fontSize: 12,
             }}
           />

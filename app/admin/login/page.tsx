@@ -7,8 +7,7 @@ import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { AuroraBackground } from "@/components/shared/AuroraBackground"
-import { GlassCard } from "@/components/shared/GlassCard"
+import { CyberConclaveFonts } from "@/components/shared/CyberConclaveFonts"
 import { VibiMascot } from "@/features/vibi/VibiMascot"
 import { createClient } from "@/lib/supabase/client"
 
@@ -45,27 +44,30 @@ export default function AdminLoginPage() {
   }
 
   return (
-    <div className="relative flex min-h-screen items-center justify-center p-6">
-      <AuroraBackground />
-      <GlassCard className="flex w-full max-w-sm flex-col items-center gap-6">
-        <VibiMascot state="idle" size={72} />
-        <div className="text-center">
-          <h1 className="text-xl font-bold">Vibe Corner Admin</h1>
-          <p className="text-sm text-muted-foreground">Sign in to manage your event.</p>
+    <div className="cc-scope cc-admin-base cc-grid-bg relative flex min-h-screen items-center justify-center overflow-hidden bg-[var(--cc-surface)] p-6">
+      <CyberConclaveFonts />
+      <div aria-hidden className="pointer-events-none absolute inset-0">
+        <div className="absolute -top-32 -left-32 size-96 rounded-full bg-[var(--cc-primary)]/20 blur-[100px]" />
+        <div className="absolute -right-32 -bottom-32 size-96 rounded-full bg-[var(--cc-secondary)]/20 blur-[100px]" />
+      </div>
+      <div className="cc-glass-panel relative w-full max-w-sm rounded-3xl p-8 text-center">
+        <div className="flex justify-center">
+          <VibiMascot state="wave" size={120} />
         </div>
-        <form onSubmit={handleSubmit} className="flex w-full flex-col gap-3">
+        <h1 className="cc-headline mt-4 text-2xl font-bold text-[var(--cc-on-surface)]">Vibe Corner Admin</h1>
+        <p className="mt-2 text-sm text-[var(--cc-on-surface-variant)]">Sign in to manage your event.</p>
+
+        <form onSubmit={handleSubmit} className="mt-8 flex w-full flex-col gap-3 text-left">
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="email">Email</Label>
-            <Input
-              id="email"
-              type="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-            />
+            <Label htmlFor="email" className="text-xs text-[var(--cc-on-surface-variant)]">
+              Email
+            </Label>
+            <Input id="email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
           </div>
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="password">Password</Label>
+            <Label htmlFor="password" className="text-xs text-[var(--cc-on-surface-variant)]">
+              Password
+            </Label>
             <Input
               id="password"
               type="password"
@@ -74,11 +76,16 @@ export default function AdminLoginPage() {
               onChange={(e) => setPassword(e.target.value)}
             />
           </div>
-          <Button type="submit" disabled={submitting} className="glow-primary mt-2">
+          <Button
+            type="submit"
+            disabled={submitting}
+            size="lg"
+            className="cc-neon-primary mt-2 h-14 rounded-xl bg-gradient-to-r from-[var(--cc-primary-container)] to-[var(--cc-secondary-container)] text-[var(--cc-on-primary)]"
+          >
             {submitting ? "Signing in..." : "Sign in"}
           </Button>
         </form>
-      </GlassCard>
+      </div>
     </div>
   )
 }

@@ -25,7 +25,10 @@ export function EventSwitcher({ events, currentSlug }: { events: EventRow[]; cur
       <SelectTrigger className="w-56">
         <SelectValue placeholder="Select event" />
       </SelectTrigger>
-      <SelectContent>
+      {/* Radix portals this to document.body, escaping the admin layout's
+          cc-scope/cc-admin-base ancestor — same fix as Dialog needed
+          earlier for MatchCard/ScanFlow/the moderation dialogs. */}
+      <SelectContent className="cc-scope cc-admin-base">
         {events.map((event) => (
           <SelectItem key={event.id} value={event.slug}>
             {event.name} ({event.status})

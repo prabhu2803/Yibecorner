@@ -153,9 +153,13 @@
     @apply rounded-2xl border border-white/10 bg-white/5 shadow-[0_8px_32px_rgba(0,0,0,0.35)] backdrop-blur-xl;
   }
 
-  /* Flatter, denser surface for the admin dashboard */
+  /* Glass surface for the admin dashboard — same treatment as the
+     participant app's cc-glass-panel, but built from bg-card/border-border
+     so it also works before .cc-admin-base remaps those to the
+     Cyber-Conclave palette (see below). */
   .admin-surface {
-    @apply rounded-xl border border-white/8 bg-card;
+    @apply rounded-xl border border-border bg-card backdrop-blur-xl;
+    box-shadow: inset 1px 1px 0 rgba(255, 255, 255, 0.04);
   }
 
   .text-gradient-vibe {
@@ -292,6 +296,35 @@
     --cc-outline-variant: #4d4354;
     font-family: "Hanken Grotesk", sans-serif;
     color: var(--cc-on-surface);
+  }
+
+  /*
+    Admin dashboard opts into the same Cyber-Conclave palette, but kept as
+    its own class (applied together with .cc-scope, never merged into it)
+    so the already-shipped participant pages — which use .cc-scope alone —
+    are completely unaffected. Remaps the base shadcn tokens that
+    Button/Badge/Input/Table already render through (bg-primary,
+    border-border, text-muted-foreground, bg-card, ...), so every existing
+    admin page inherits the new look without per-page changes.
+    --destructive is left untouched — cc has no error-red token of its own,
+    and the existing red already reads fine on a dark surface.
+  */
+  .cc-scope.cc-admin-base {
+    --background: var(--cc-surface);
+    --foreground: var(--cc-on-surface);
+    --card: var(--cc-surface-container);
+    --card-foreground: var(--cc-on-surface);
+    --border: var(--cc-outline-variant);
+    --input: var(--cc-surface-lowest);
+    --muted: var(--cc-surface-high);
+    --muted-foreground: var(--cc-on-surface-variant);
+    --primary: var(--cc-primary);
+    --primary-foreground: var(--cc-on-primary);
+    --secondary: var(--cc-surface-high);
+    --secondary-foreground: var(--cc-on-surface);
+    --accent: var(--cc-secondary);
+    --accent-foreground: var(--cc-surface);
+    --ring: var(--cc-secondary);
   }
 
   .cc-headline {
