@@ -92,10 +92,19 @@ export async function markChallengeSolved(
   responseId: string
 ) {
   const supabase = await createClient()
-  const { error } = await supabase
-    .from("challenges")
-    .update({ status: "solved", solved_by_response_id: responseId })
-    .eq("id", challengeId)
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) return { success: false as const, error: "Not signed in" }
+
+  // Authorship and "does this response actually belong to this challenge"
+  // are both verified inside the RPC (mark_challenge_solved, security
+  // definer) — status/solved_by_response_id are no longer client-grantable
+  // columns, precisely so this can't be spoofed via a raw .update() call.
+  const { error } = await supabase.rpc("mark_challenge_solved", {
+    p_challenge_id: challengeId,
+    p_response_id: responseId,
+  })
 
   if (error) return { success: false as const, error: error.message }
   revalidatePath(`/join/${eventSlug}/yibe/challenges/${challengeId}`)

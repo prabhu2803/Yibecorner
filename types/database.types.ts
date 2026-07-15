@@ -411,6 +411,7 @@ export interface Database {
       current_participant_id: { Args: { p_event_id: string }; Returns: string | null }
       toggle_upvote: { Args: { p_best_practice_id: string }; Returns: boolean }
       toggle_save: { Args: { p_best_practice_id: string }; Returns: boolean }
+      mark_challenge_solved: { Args: { p_challenge_id: string; p_response_id: string }; Returns: void }
       expire_stale_connections: { Args: Record<string, never>; Returns: void }
       find_or_claim_participant_by_phone: {
         Args: { p_event_id: string; p_mobile_number: string }
