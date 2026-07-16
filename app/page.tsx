@@ -34,7 +34,7 @@ export default async function HomePage() {
         hankenGrotesk.variable,
         jetbrainsMono.variable,
         orbitron.variable,
-        "font-[family-name:var(--font-hanken-grotesk)] relative flex h-screen w-full flex-col overflow-y-auto grid-bg-vibe"
+        "font-[family-name:var(--font-hanken-grotesk)] relative flex min-h-screen w-full flex-col grid-bg-vibe"
       )}
     >
       <GlowOrbs />
