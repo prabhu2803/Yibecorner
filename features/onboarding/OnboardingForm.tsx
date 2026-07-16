@@ -534,7 +534,7 @@ export function OnboardingForm() {
               {phase === "designation" && (
                 <>
                   <div className="mb-2 flex justify-center">
-                    <VibiMascot state="idle" size={120} />
+                    <VibiMascot state="thinking" size={120} />
                   </div>
                   <div className="mb-4 flex items-center justify-center gap-2">
                     <span className="h-px w-6 bg-[var(--cc-primary)]" />
@@ -576,7 +576,7 @@ export function OnboardingForm() {
               {phase === "city" && (
                 <>
                   <div className="mb-2 flex justify-center">
-                    <VibiMascot state="idle" size={120} />
+                    <VibiMascot state="heart" size={120} />
                   </div>
                   <div className="mb-4 flex items-center justify-center gap-2">
                     <span className="h-px w-6 bg-[var(--cc-primary)]" />
@@ -618,7 +618,7 @@ export function OnboardingForm() {
               {phase === "contact" && (
                 <>
                   <div className="mb-2 flex justify-center">
-                    <VibiMascot state="idle" size={120} />
+                    <VibiMascot state="wake" size={120} />
                   </div>
                   <div className="mb-4 flex items-center justify-center gap-2">
                     <span className="h-px w-6 bg-[var(--cc-primary)]" />

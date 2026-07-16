@@ -38,8 +38,10 @@ export default async function HomePage() {
       <GlowOrbs />
 
       <div className="z-10 mx-auto flex w-full max-w-[1400px] flex-1 flex-col gap-4 p-4 sm:p-6">
-        {/* Hero row — plain text, no card background */}
-        <div className="flex shrink-0 flex-col items-start justify-between gap-4 px-2 py-4 sm:flex-row sm:items-center">
+        {/* Hero — mascot large and up top, greeting the page, rather than
+            tucked to the side sharing space with the stat counters. */}
+        <div className="flex shrink-0 flex-col items-center gap-4 px-2 py-6 text-center">
+          <VibiMascot state="wave" size={220} />
           <div className="max-w-xl space-y-1">
             <h1 className="font-[family-name:var(--font-orbitron)] text-4xl font-black tracking-tight uppercase sm:text-5xl">
               <span className="animate-title-wiggle">
@@ -53,23 +55,20 @@ export default async function HomePage() {
               Meet the right people. Solve real business challenges. Build meaningful partnerships.
             </p>
           </div>
-          <div className="flex shrink-0 items-center gap-6">
-            <VibiMascot state="thinking" size={140} />
-            <div className="flex items-center gap-6">
-              {counters.map((counter, i) => (
-                <div key={counter.label} className="flex items-center gap-6">
-                  {i > 0 && <div className="h-9 w-px bg-white/15" />}
-                  <div className="text-center">
-                    <div className="font-[family-name:var(--font-space-grotesk)] text-2xl leading-none text-primary">
-                      {counter.value.toLocaleString()}
-                    </div>
-                    <div className="font-[family-name:var(--font-jetbrains-mono)] mt-1 text-[10px] tracking-widest text-muted-foreground uppercase">
-                      {counter.label}
-                    </div>
+          <div className="flex items-center gap-6">
+            {counters.map((counter, i) => (
+              <div key={counter.label} className="flex items-center gap-6">
+                {i > 0 && <div className="h-9 w-px bg-white/15" />}
+                <div className="text-center">
+                  <div className="font-[family-name:var(--font-space-grotesk)] text-2xl leading-none text-primary">
+                    {counter.value.toLocaleString()}
+                  </div>
+                  <div className="font-[family-name:var(--font-jetbrains-mono)] mt-1 text-[10px] tracking-widest text-muted-foreground uppercase">
+                    {counter.label}
                   </div>
                 </div>
-              ))}
-            </div>
+              </div>
+            ))}
           </div>
         </div>
 
