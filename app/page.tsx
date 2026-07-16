@@ -114,7 +114,7 @@ export default async function HomePage() {
           <span className="font-[family-name:var(--font-jetbrains-mono)] text-base tracking-widest text-muted-foreground uppercase sm:text-lg">
             Powered by
           </span>
-          <Image src="/logos/strawlabs.png" alt="STRAW Labs" width={120} height={40} className="h-6 w-auto rounded sm:h-8" />
+          <Image src="/logos/strawlabs.png" alt="STRAW Labs" width={280} height={94} className="h-16 w-auto rounded sm:h-20" />
         </a>
       </footer>
     </main>
