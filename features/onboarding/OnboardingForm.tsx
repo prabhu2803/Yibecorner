@@ -83,14 +83,16 @@ type Phase =
  * pinned while the step content scrolls without escaping the app's own
  * max-w-md column the way a viewport-fixed header would.
  */
-function OnboardingTopBar() {
+function OnboardingTopBar({ onClose }: { onClose: () => void }) {
   return (
     <div className="sticky top-0 z-40 -mx-4 flex h-16 items-center justify-between border-b border-white/10 bg-[var(--cc-surface)]/85 px-4 backdrop-blur-xl">
       <div className="flex items-center gap-2">
         <MaterialIcon name="grid_view" className="text-[20px] text-[var(--cc-primary)]" />
         <span className="cc-headline text-sm font-bold tracking-tight text-[var(--cc-primary)]">VIBE CORNER</span>
       </div>
-      <MaterialIcon name="close" className="text-[20px] text-[var(--cc-on-surface-variant)]/60" />
+      <button type="button" onClick={onClose} aria-label="Exit onboarding">
+        <MaterialIcon name="close" className="text-[20px] text-[var(--cc-on-surface-variant)]/60" />
+      </button>
     </div>
   )
 }
@@ -125,6 +127,19 @@ export function OnboardingForm() {
   const [selfieDataUrl, setSelfieDataUrl] = React.useState<string | null>(null)
   const [returningPhone, setReturningPhone] = React.useState("")
   const [checkingReturning, setCheckingReturning] = React.useState(false)
+
+  // The "X" glyph shown on the welcome screen and every data-collection
+  // step's top bar was purely decorative — no click handler at all, so
+  // tapping it did nothing. Nothing is saved until the final submit, so
+  // exiting mid-wizard costs no real data on the server, but it does
+  // discard what's typed so far — confirm before leaving once there's
+  // actually something to lose (i.e. past the welcome screen).
+  function exitOnboarding() {
+    if (phase !== "welcome" && !window.confirm("Leave onboarding? Your answers so far will be lost.")) {
+      return
+    }
+    router.replace("/")
+  }
 
   const form = useForm<OnboardingInput>({
     resolver: zodResolver(onboardingSchema),
@@ -277,9 +292,14 @@ export function OnboardingForm() {
     content = (
       <div className="cc-grid-bg relative -mx-4 flex flex-1 flex-col items-center justify-center px-6 py-10">
         <div className="cc-glass-panel relative w-full max-w-sm rounded-3xl p-8 text-center">
-          <span className="absolute top-5 right-5 text-[var(--cc-on-surface-variant)]/60">
+          <button
+            type="button"
+            onClick={exitOnboarding}
+            aria-label="Exit onboarding"
+            className="absolute top-5 right-5 text-[var(--cc-on-surface-variant)]/60"
+          >
             <MaterialIcon name="close" className="text-[22px]" />
-          </span>
+          </button>
 
           <div className="flex justify-center">
             <VibiMascot state="wave" size={160} />
@@ -413,7 +433,7 @@ export function OnboardingForm() {
   } else {
     content = (
       <div className="flex flex-1 flex-col">
-        <OnboardingTopBar />
+        <OnboardingTopBar onClose={exitOnboarding} />
 
         <div className="flex flex-1 flex-col gap-4 pt-4">
           {isDataStep && (

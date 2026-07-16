@@ -1,3 +1,4 @@
+import Image from "next/image"
 import Link from "next/link"
 
 import { GlowOrbs } from "@/components/shared/GlowOrbs"
@@ -108,9 +109,12 @@ export default async function HomePage() {
           href="https://www.strawlabs.in"
           target="_blank"
           rel="noopener noreferrer"
-          className="font-[family-name:var(--font-jetbrains-mono)] text-base tracking-widest text-muted-foreground uppercase transition hover:text-foreground active:scale-95 sm:text-lg"
+          className="flex items-center gap-2 transition hover:opacity-80 active:scale-95"
         >
-          Powered by <span className="text-[#F94438]">STRAW Labs</span>
+          <span className="font-[family-name:var(--font-jetbrains-mono)] text-base tracking-widest text-muted-foreground uppercase sm:text-lg">
+            Powered by
+          </span>
+          <Image src="/logos/strawlabs.png" alt="STRAW Labs" width={120} height={40} className="h-6 w-auto rounded sm:h-8" />
         </a>
       </footer>
     </main>
