@@ -23,7 +23,7 @@ import { StepCard } from "@/components/ui/step-card"
 import { ChoiceGrid } from "@/features/onboarding/ChoiceGrid"
 import { MaterialIcon } from "@/features/onboarding/MaterialIcon"
 import { VibiMascot } from "@/features/vibi/VibiMascot"
-import { completeOnboarding } from "@/features/onboarding/actions"
+import { checkReturningParticipant, completeOnboarding } from "@/features/onboarding/actions"
 import { generateFutureSelfImage } from "@/features/onboarding/generateFutureSelfImage"
 import { SelfieCapture } from "@/features/onboarding/SelfieCapture"
 import { onboardingSchema, phoneRegex, type OnboardingInput } from "@/features/onboarding/schema"
@@ -70,6 +70,7 @@ const STEP_ORDER = [
 
 type Phase =
   | "welcome"
+  | "returning-check"
   | (typeof STEP_ORDER)[number]
   | "future-self-selfie"
   | "future-self-generating"
@@ -122,6 +123,8 @@ export function OnboardingForm() {
   const [direction, setDirection] = React.useState<1 | -1>(1)
   const [futureSelfImageUrl, setFutureSelfImageUrl] = React.useState<string | null>(null)
   const [selfieDataUrl, setSelfieDataUrl] = React.useState<string | null>(null)
+  const [returningPhone, setReturningPhone] = React.useState("")
+  const [checkingReturning, setCheckingReturning] = React.useState(false)
 
   const form = useForm<OnboardingInput>({
     resolver: zodResolver(onboardingSchema),
@@ -175,6 +178,28 @@ export function OnboardingForm() {
     if (hasExtraError) return
 
     goTo(next, 1)
+  }
+
+  // Early "already onboarded?" check, shown right after Welcome — lets a
+  // returning participant (new device, cleared storage, Sign Out) skip
+  // straight to Home instead of redoing all 11 steps only to be
+  // recognized at the very last one. "I'm new here" bypasses this
+  // entirely via goTo("name", 1), unchanged from before this existed.
+  async function checkReturning() {
+    setCheckingReturning(true)
+    const result = await checkReturningParticipant(event.id, returningPhone)
+    setCheckingReturning(false)
+
+    if (result.matched) {
+      await refetchParticipant()
+      router.replace(`/join/${event.slug}/home`)
+      return
+    }
+
+    // No match — continue the normal wizard, pre-filling the "contact"
+    // step with what they already typed so it isn't asked twice.
+    form.setValue("mobileNumber", returningPhone)
+    goTo("name", 1)
   }
 
   async function finish() {
@@ -268,12 +293,55 @@ export function OnboardingForm() {
 
           <div className="mt-8 flex justify-end">
             <Button
-              onClick={() => goTo("name", 1)}
+              onClick={() => goTo("returning-check", 1)}
               className="cc-neon-primary h-14 rounded-xl bg-gradient-to-r from-[var(--cc-primary-container)] to-[var(--cc-secondary-container)] px-8 text-[var(--cc-on-primary)]"
               size="lg"
             >
               Let&apos;s Begin
             </Button>
+          </div>
+        </div>
+      </div>
+    )
+  } else if (phase === "returning-check") {
+    content = (
+      <div className="cc-grid-bg relative -mx-4 flex flex-1 flex-col items-center justify-center px-6 py-10">
+        <div className="cc-glass-panel relative w-full max-w-sm rounded-3xl p-8 text-center">
+          <div className="flex justify-center">
+            <VibiMascot state={checkingReturning ? "thinking" : "idle"} size={120} />
+          </div>
+
+          <h1 className="cc-headline mt-4 text-2xl font-bold text-[var(--cc-on-surface)]">
+            Already onboarded?
+          </h1>
+          <p className="mx-auto mt-2 max-w-xs text-sm text-[var(--cc-on-surface-variant)]">
+            Enter your mobile number to skip straight to your profile.
+          </p>
+
+          <div className="mt-6 flex flex-col gap-3 text-left">
+            <Input
+              type="tel"
+              placeholder="+91 98765 43210"
+              value={returningPhone}
+              onChange={(e) => setReturningPhone(e.target.value)}
+              disabled={checkingReturning}
+              className="cc-underline-input h-auto rounded-none border-0 border-b-2 border-[var(--cc-outline-variant)] bg-transparent px-0 py-4 text-xl focus-visible:border-[var(--cc-secondary)] focus-visible:ring-0"
+            />
+            <Button
+              disabled={checkingReturning || !phoneRegex.test(returningPhone.trim())}
+              onClick={checkReturning}
+              className="cc-neon-primary h-14 rounded-xl bg-gradient-to-r from-[var(--cc-primary-container)] to-[var(--cc-secondary-container)] text-[var(--cc-on-primary)]"
+            >
+              {checkingReturning ? "Checking..." : "Continue"}
+            </Button>
+            <button
+              type="button"
+              disabled={checkingReturning}
+              onClick={() => goTo("name", 1)}
+              className="cc-label-tech text-center text-[11px] tracking-widest text-[var(--cc-on-surface-variant)] uppercase"
+            >
+              I&apos;m new here
+            </button>
           </div>
         </div>
       </div>

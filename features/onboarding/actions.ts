@@ -1,6 +1,6 @@
 "use server"
 
-import { normalizePhone, onboardingSchema, type OnboardingInput } from "@/features/onboarding/schema"
+import { normalizePhone, onboardingSchema, phoneRegex, type OnboardingInput } from "@/features/onboarding/schema"
 import { computeMatchesForParticipant } from "@/features/matchmaking/actions"
 import { CHALLENGE_CATEGORY_META, type ChallengeCategory } from "@/lib/constants"
 import { createClient } from "@/lib/supabase/server"
@@ -14,6 +14,52 @@ function deriveChallengeTitle(text: string): string {
   const cut = trimmed.slice(0, 100)
   const lastSpace = cut.lastIndexOf(" ")
   return `${cut.slice(0, lastSpace > 40 ? lastSpace : 100)}…`
+}
+
+/**
+ * Early "already onboarded?" check shown right after the Welcome screen,
+ * before the rest of the wizard — lets a returning participant (new
+ * device, cleared storage, or after Sign Out) skip straight to Home
+ * instead of redoing all 11 steps only to be recognized at the very end.
+ * Reuses find_or_claim_participant_by_phone (0020_phone_match_claim_participant.sql)
+ * unchanged — it already does exactly what's needed (finds a participant
+ * with this phone under a different user_id and reassigns it to this
+ * session), just called earlier in the flow than completeOnboarding's
+ * own use of it.
+ */
+export async function checkReturningParticipant(eventId: string, mobileNumber: string) {
+  const trimmed = mobileNumber.trim()
+  if (!phoneRegex.test(trimmed)) {
+    return { matched: false as const }
+  }
+
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) return { matched: false as const }
+
+  try {
+    const { data: claimedId } = await supabase.rpc("find_or_claim_participant_by_phone", {
+      p_event_id: eventId,
+      p_mobile_number: normalizePhone(trimmed),
+    })
+    if (!claimedId) return { matched: false as const }
+
+    const { data: claimed } = await supabase
+      .from("event_participants")
+      .select("onboarding_completed_at")
+      .eq("id", claimedId)
+      .maybeSingle()
+
+    // A match with no completed onboarding is a rare edge case (e.g. an
+    // abandoned session) — treat it the same as "no match" and let the
+    // wizard continue normally rather than trying to resume a partial fill.
+    return { matched: Boolean(claimed?.onboarding_completed_at) }
+  } catch (err) {
+    console.error("checkReturningParticipant failed:", err)
+    return { matched: false as const }
+  }
 }
 
 export async function completeOnboarding(
