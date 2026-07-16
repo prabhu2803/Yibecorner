@@ -2,6 +2,7 @@ import Link from "next/link"
 
 import { GlowOrbs } from "@/components/shared/GlowOrbs"
 import { HeroVideoPanel } from "@/components/landing/HeroVideoPanel"
+import { TextRepel } from "@/components/ui/text-repel"
 import { VibiMascot } from "@/features/vibi/VibiMascot"
 import { clientEnv } from "@/lib/env"
 import { getBaseUrl } from "@/lib/get-base-url"
@@ -32,21 +33,17 @@ export default async function HomePage() {
         hankenGrotesk.variable,
         jetbrainsMono.variable,
         orbitron.variable,
-        "font-[family-name:var(--font-hanken-grotesk)] relative flex min-h-screen w-full flex-col grid-bg-vibe"
+        "font-[family-name:var(--font-hanken-grotesk)] relative flex h-screen w-full flex-col overflow-y-auto grid-bg-vibe"
       )}
     >
       <GlowOrbs />
 
       <div className="z-10 mx-auto flex w-full max-w-[1400px] flex-1 flex-col gap-4 p-4 sm:p-6">
-        {/* Hero — mascot large and up top, greeting the page, rather than
-            tucked to the side sharing space with the stat counters. */}
-        <div className="flex shrink-0 flex-col items-center gap-4 px-2 py-6 text-center">
-          <VibiMascot state="wave" size={220} />
+        {/* Hero row — title block left, stats right, no mascot. */}
+        <div className="flex shrink-0 flex-col items-start justify-between gap-4 px-2 py-4 sm:flex-row sm:items-center">
           <div className="max-w-xl space-y-1">
-            <h1 className="font-[family-name:var(--font-orbitron)] text-4xl font-black tracking-tight uppercase sm:text-5xl">
-              <span className="animate-title-wiggle">
-                Vibe <span className="text-primary">Corner</span>
-              </span>
+            <h1 className="font-[family-name:var(--font-orbitron)] text-6xl font-black tracking-tight uppercase sm:text-7xl">
+              <TextRepel text="Yibe Corner" letterClassName="text-foreground" radius={140} strength={35} />
             </h1>
             <p className="font-[family-name:var(--font-space-grotesk)] text-base font-medium text-foreground/80 sm:text-lg">
               Turning event attendance into <span className="text-primary">real connections</span>
@@ -55,7 +52,7 @@ export default async function HomePage() {
               Meet the right people. Solve real business challenges. Build meaningful partnerships.
             </p>
           </div>
-          <div className="flex items-center gap-6">
+          <div className="flex shrink-0 items-center gap-6">
             {counters.map((counter, i) => (
               <div key={counter.label} className="flex items-center gap-6">
                 {i > 0 && <div className="h-9 w-px bg-white/15" />}
@@ -74,29 +71,27 @@ export default async function HomePage() {
 
         {/* Video + QR */}
         <div className="grid grid-cols-1 items-center gap-6 lg:grid-cols-12">
-          <div className="lg:col-span-8">
+          <div className="lg:col-span-9">
             <HeroVideoPanel />
           </div>
 
-          <div className="flex flex-col items-center gap-4 text-center lg:col-span-4">
-            <div className="space-y-1">
+          <div className="flex flex-col items-center gap-4 text-center lg:col-span-3">
+            <div className="flex items-center gap-2">
+              <VibiMascot state="look_at_qr" size={64} />
               <h2 className="font-[family-name:var(--font-space-grotesk)] text-lg font-semibold text-cyan">
-                Join Vibe Corner
+                Join Yibe Corner
               </h2>
-              <p className="mx-auto max-w-[220px] text-xs text-muted-foreground">
-                Scan to onboard on your phone and start networking instantly.
-              </p>
             </div>
+            <p className="mx-auto max-w-[220px] text-xs text-muted-foreground">
+              Scan to onboard on your phone and start networking instantly.
+            </p>
 
-            <div className="flex items-center gap-4">
-              <VibiMascot state="look_at_qr" size={80} />
-              {/* On a phone you can't scan your own screen — the QR image
-                  itself is a tap target straight to /join/[slug] too, not
-                  just decorative, so mobile visitors have something to tap. */}
-              <Link href={`/join/${slug}`} className="rounded-2xl bg-white p-4 transition active:scale-95">
-                <QRCodeSVG value={joinUrl} size={168} />
-              </Link>
-            </div>
+            {/* On a phone you can't scan your own screen — the QR image
+                itself is a tap target straight to /join/[slug] too, not
+                just decorative, so mobile visitors have something to tap. */}
+            <Link href={`/join/${slug}`} className="rounded-2xl bg-white p-5 transition active:scale-95">
+              <QRCodeSVG value={joinUrl} size={220} />
+            </Link>
 
             <Link
               href={`/join/${slug}`}
@@ -107,6 +102,17 @@ export default async function HomePage() {
           </div>
         </div>
       </div>
+
+      <footer className="z-10 flex justify-center py-4">
+        <a
+          href="https://www.strawlabs.in"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="font-[family-name:var(--font-jetbrains-mono)] text-base tracking-widest text-muted-foreground uppercase transition hover:text-foreground active:scale-95 sm:text-lg"
+        >
+          Powered by <span className="text-[#F94438]">STRAW Labs</span>
+        </a>
+      </footer>
     </main>
   )
 }
