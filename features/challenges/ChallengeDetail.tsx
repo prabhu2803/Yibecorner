@@ -24,11 +24,13 @@ export interface ResponseView extends ResponseRow {
 export function ChallengeDetail({
   eventSlug,
   challenge: initialChallenge,
+  authorName,
   responses: initialResponses,
   isAuthor,
 }: {
   eventSlug: string
   challenge: ChallengeRow
+  authorName: string
   responses: ResponseView[]
   isAuthor: boolean
 }) {
@@ -99,12 +101,16 @@ export function ChallengeDetail({
     <div className="flex flex-col gap-4 py-6">
       <div className="flex items-start justify-between gap-2">
         <h1 className="text-xl font-bold">{challenge.title}</h1>
-        {challenge.status === "solved" && (
-          <Badge className="gap-1 bg-primary/20 text-primary">
-            <CheckCircle2 className="size-3" /> Solved
-          </Badge>
-        )}
+        <div className="flex shrink-0 items-center gap-1">
+          {isAuthor && <Badge variant="secondary">Yours</Badge>}
+          {challenge.status === "solved" && (
+            <Badge className="gap-1 bg-primary/20 text-primary">
+              <CheckCircle2 className="size-3" /> Solved
+            </Badge>
+          )}
+        </div>
       </div>
+      <p className="text-xs font-medium text-muted-foreground">by {authorName}</p>
       <p className="text-sm text-muted-foreground">{challenge.description}</p>
 
       <div className="flex flex-col gap-3">

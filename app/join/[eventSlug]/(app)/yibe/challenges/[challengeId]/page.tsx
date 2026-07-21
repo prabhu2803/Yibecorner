@@ -26,6 +26,12 @@ export default async function ChallengeDetailPage({
     .maybeSingle()
   if (!challenge) notFound()
 
+  const { data: author } = await supabase
+    .from("event_participants")
+    .select("full_name")
+    .eq("id", challenge.author_id)
+    .maybeSingle()
+
   const { data: me } = await supabase
     .from("event_participants")
     .select("id")
@@ -54,6 +60,7 @@ export default async function ChallengeDetailPage({
     <ChallengeDetail
       eventSlug={eventSlug}
       challenge={challenge}
+      authorName={author?.full_name ?? "Someone"}
       responses={views}
       isAuthor={me?.id === challenge.author_id}
     />
