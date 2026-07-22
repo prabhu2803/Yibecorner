@@ -406,7 +406,35 @@ export interface Database {
         Relationships: []
       }
     }
-    Views: Record<string, never>
+    Views: {
+      event_participants_public: {
+        Row: {
+          id: string
+          event_id: string
+          full_name: string
+          company: string | null
+          designation: string | null
+          city: string | null
+          industry: string
+          industry_other: string | null
+          business_stage: BusinessStage
+          looking_for: string[]
+          can_help_with: string[]
+          joined_at: string
+        }
+        Relationships: []
+      }
+      connections_public: {
+        Row: {
+          id: string
+          event_id: string
+          requester_id: string
+          recipient_id: string
+          verified_at: string | null
+        }
+        Relationships: []
+      }
+    }
     Functions: {
       is_admin: { Args: Record<string, never>; Returns: boolean }
       current_participant_id: { Args: { p_event_id: string }; Returns: string | null }

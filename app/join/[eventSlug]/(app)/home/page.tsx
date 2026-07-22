@@ -38,7 +38,7 @@ export default function HomePage() {
       const supabase = createClient()
       const { data } = await supabase
         .from("challenges")
-        .select("id, title, status, challenge_responses(count)")
+        .select("id, title, status, challenge_responses!challenge_responses_challenge_id_fkey(count)")
         .eq("author_id", participant.id)
         .order("created_at", { ascending: false })
         .limit(1)

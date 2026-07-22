@@ -4,9 +4,11 @@ import Link from "next/link"
 import { GlowOrbs } from "@/components/shared/GlowOrbs"
 import { HeroVideoPanel } from "@/components/landing/HeroVideoPanel"
 import { TextRepel } from "@/components/ui/text-repel"
+import { LiveBoard } from "@/features/board/LiveBoard"
 import { VibiMascot } from "@/features/vibi/VibiMascot"
 import { clientEnv } from "@/lib/env"
 import { getBaseUrl } from "@/lib/get-base-url"
+import { getPublicChallenges, getPublicConnections, getPublicParticipants } from "@/lib/queries/board"
 import { getEventBySlug } from "@/lib/queries/events"
 import { hankenGrotesk, jetbrainsMono, orbitron, spaceGrotesk } from "@/lib/fonts"
 import { cn } from "@/lib/utils"
@@ -19,6 +21,13 @@ export default async function HomePage() {
   const joinUrl = `${baseUrl}/join/${slug}`
 
   const stats = result?.stats
+  const [challenges, participants, connections] = result
+    ? await Promise.all([
+        getPublicChallenges(result.event.id),
+        getPublicParticipants(result.event.id),
+        getPublicConnections(result.event.id),
+      ])
+    : [[], [], []]
 
   const counters = [
     { label: "Entrepreneurs Joined", value: stats?.entrepreneurs_joined ?? 0 },
@@ -102,6 +111,13 @@ export default async function HomePage() {
             </Link>
           </div>
         </div>
+
+        <LiveBoard
+          challenges={challenges}
+          participants={participants}
+          connections={connections}
+          eventSlug={slug}
+        />
       </div>
 
       <footer className="z-10 flex justify-center py-4">

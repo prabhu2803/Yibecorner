@@ -32,7 +32,7 @@ export default async function ChallengesPage({
 
   const { data: challenges } = await supabase
     .from("challenges")
-    .select("*, challenge_responses(count)")
+    .select("*, challenge_responses!challenge_responses_challenge_id_fkey(count)")
     .eq("event_id", result.event.id)
     .order("created_at", { ascending: false })
 

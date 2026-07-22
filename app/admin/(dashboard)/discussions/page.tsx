@@ -44,7 +44,12 @@ export default async function AdminDiscussionsPage({
                 action={convertDiscussionToCircle.bind(null, path, d.id)}
                 className="flex gap-2"
               >
-                <Input name="circleLocation" placeholder="e.g. Table 4, near the entrance" className="w-56" />
+                <Input
+                  name="circleLocation"
+                  placeholder="e.g. Table 4, near the entrance"
+                  className="w-56"
+                  required
+                />
                 <Button size="sm" type="submit">
                   Convert to Circle
                 </Button>
